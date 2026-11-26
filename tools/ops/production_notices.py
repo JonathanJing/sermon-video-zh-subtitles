@@ -68,6 +68,9 @@ GATES = {
     "confirm": {"stage": "l4.device-confirm", "page": "confirm.html", "name": "发布后确认", "remind": 120,
                 "opened": ("已发布 · 请在手机上确认", "{pageId} 已上线并通过发布门禁。请把三种语言各打开看一遍。"),
                 "waiting": "没有你的确认，这一期不记为完成"},
+    "poster": {"stage": "l4.poster", "page": "poster.html", "name": "海报", "remind": 180,
+               "opened": ("待选 · 海报", "{pageId}：{candidates} 张候选，每张三种语言。批准其中一张才会上传。"),
+               "waiting": "没有批准就不会上传海报"},
 }
 
 # event -> (sender, level, link, title, body). `link`: gate | index | drive | none.
@@ -104,6 +107,7 @@ EVENTS = {
                          "可用 {available} GiB，需要 {required} GiB。关掉占内存的应用后会自动再试。"),
     # Publishing and the end
     "publish.gate_failed": ("driver", "timeSensitive", "index", "发布门禁没过 · {pageId}", "{failed} 项不一致。已停止收尾，这一期不记为已发布。"),
+    "poster.failed": ("driver", "active", "index", "海报没有做成 · {pageId}", "{reason}。页面的发布不受影响；海报可以之后按手工流程补。"),
     "production.completed": ("driver", "active", "index", "完成 · {title}", "三种语言已发布，并经你在设备上确认。全程 {wall}，其中等你 {waiting}。现场验收没有做。"),
 }
 

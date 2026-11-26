@@ -11,7 +11,7 @@ WEB = ROOT / "apps" / "review-web"
 sys.path.insert(0, str(ROOT / "tools" / "ops"))
 import production_notices as notices  # noqa: E402
 
-GATE_KINDS = ["decisions", "english", "speakers", "track", "study", "publish", "confirm"]
+GATE_KINDS = ["decisions", "english", "speakers", "track", "study", "publish", "confirm", "poster"]
 PAGES = ["index", *GATE_KINDS]
 
 

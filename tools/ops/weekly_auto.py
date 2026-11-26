@@ -156,7 +156,7 @@ class Budget:
 
 # ---------------------------------------------------------------- the driver
 
-class Driver(weekly_auto_publish.PublishStages):
+class Driver(weekly_auto_publish.PublishStages, weekly_auto_publish.PosterStages):
     Error = StageError                                      # what the publish stages raise
     DELIVERABLE_LABELS = DELIVERABLES
     LOCALE_NAMES = notices.LOCALE_NAMES
@@ -675,6 +675,9 @@ class Driver(weekly_auto_publish.PublishStages):
             stages += ["wait.tracks", "l3.verdict"]
             if self.publishes(record):
                 stages += list(weekly_auto_publish.PUBLISH_STAGES)
+                if (self.config.get("automation") or {}).get("poster"):     # posters come after the page is live and before the last wait
+                    at = stages.index("wait.confirm")
+                    stages[at:at] = list(weekly_auto_publish.POSTER_STAGES)
         return stages + ["handoff"]
 
     def run_stage(self, record: dict, stage: str) -> str:
@@ -1143,7 +1146,7 @@ class Driver(weekly_auto_publish.PublishStages):
             kind = decision["kind"]
             done = lambda outcome, **kw: self.store.record_outcome(record["production"], gate_id, item["decisionId"], outcome, **kw)
             try:
-                if kind not in ("decisions", "english", "track", "publish", "confirm"):
+                if kind not in ("decisions", "english", "track", "publish", "confirm", "poster"):
                     raise StageError("unsupported", "这一步还没有接到自动流程")
                 if decision["verdict"] == "changes_requested":
                     edits = (decision["payload"].get("edits") or {}) if kind == "english" else {}
@@ -1154,12 +1157,13 @@ class Driver(weekly_auto_publish.PublishStages):
                         count = len(decision["payload"].get("issueIds") or [])
                         if count:
                             self.queue_repair(record, item)       # the marked sentences: reword, render again, show the next version
-                    done("applied", next_stage=("按你的修改重出一版，再请你批准" if kind == "english" else "按你标的句子改字重配，再请你听") if count else None)
+                    following = self.poster_next(record, item) if kind == "poster" else None
+                    done("applied", next_stage=following or (("按你的修改重出一版，再请你批准" if kind == "english" else "按你标的句子改字重配，再请你听") if count else None))
                     self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, locale=decision.get("locale"),
                                 once=f"changes:{item['decisionId']}", count=count or 1)
                     continue
                 receipt, following = {"decisions": self.apply_kickoff, "english": self.apply_english, "track": self.apply_track,
-                                      "publish": self.apply_publish, "confirm": self.apply_confirm}[kind](record, item)
+                                      "publish": self.apply_publish, "confirm": self.apply_confirm, "poster": self.apply_poster}[kind](record, item)
                 done("applied", receipt_sha256=receipt, next_stage=following)
                 self.notice(record, "decision.applied", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"applied:{item['decisionId']}", verdict="批准",
                             reviewer=item["reviewer"].get("name") or item["reviewer"]["login"], next=following)
@@ -1170,7 +1174,8 @@ class Driver(weekly_auto_publish.PublishStages):
                     # the notice says "open the new version": build that version from what the files are now
                     again = {"decisions": ["gate.decisions", "wait.review"], "english": ["l1.rows", "gate.english", "wait.review"],
                              "track": [f"gate.track.{decision.get('locale')}", "wait.tracks"],
-                             "publish": ["gate.publish", "wait.publish"], "confirm": ["gate.confirm", "wait.confirm"]}[kind]
+                             "publish": ["gate.publish", "wait.publish"], "confirm": ["gate.confirm", "wait.confirm"],
+                             "poster": ["gate.poster", "wait.poster"]}[kind]
                     for stage in again + ["l3.verdict", "handoff"]:
                         record["stages"].pop(stage, None)
                 else:

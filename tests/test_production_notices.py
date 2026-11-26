@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / "tools" / "ops"))
 import production_notices as notices  # noqa: E402
 
 URL = "https://mac.tailnet-name.ts.net:8791/english.html?production=p&gate=l1.english-review"
-FIELDS = dict(sunday="2026-11-29", fileName="Saturday_530pm_Live__1080.mp4", sizeGb="1.00", eta="20:05", reason="不是视频文件",
+FIELDS = dict(candidates=2, sunday="2026-11-29", fileName="Saturday_530pm_Live__1080.mp4", sizeGb="1.00", eta="20:05", reason="不是视频文件",
               attempts="3", spent="1.20", reserve="0.90", cap="50", stageName="英文转写", summary="整期 · 三语 · 同步 · 正式页",
               units="457", flagged="41", minutes="15", toCheck="21", trackMinutes="36", maxLag="4.9", locales="中文、韩语、西班牙语",
               pageId="page-20261129", deployments="3", waited="45 分钟", verdict="批准", reviewer="reviewer@example.com", next="翻译",

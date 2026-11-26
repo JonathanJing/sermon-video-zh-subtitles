@@ -1,0 +1,148 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l4.poster",
+ "kind": "poster",
+ "production": "demo-20261129-sample",
+ "locale": null,
+ "title": "海报",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T06:30:00+00:00",
+ "bindings": {
+  "pageId": "demo-sample-20261129",
+  "candidate.a1": "4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a",
+  "candidate.a2": "4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b",
+  "catalogSha256": "4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "pageId": "demo-sample-20261129",
+  "title": "演示讲题",
+  "origin": "https://example.invalid",
+  "round": 1,
+  "design": {
+   "why": "标题里的主语最清楚，画面不依赖讲道里的例子。",
+   "chosen": {
+    "id": "c1",
+    "concept": "清晨的光照进一座安静的城门",
+    "primarySubject": "一座敞开的城门",
+    "anchorTier": "title",
+    "anchorTerm": "演示讲题",
+    "total": 11,
+    "evidence": [
+     {
+      "textGroupId": "g0012",
+      "quote": "这是一句示例原文，说明画面主体的出处。",
+      "tier": "scripture"
+     },
+     {
+      "textGroupId": "g0040",
+      "quote": "这是第二句示例原文。",
+      "tier": "teaching"
+     }
+    ]
+   },
+   "others": [
+    {
+     "id": "c2",
+     "concept": "一条穿过旷野的小路",
+     "total": 9,
+     "rejected": "主体只出现在讲道的例子里"
+    },
+    {
+     "id": "c3",
+     "concept": "一盏点着的灯",
+     "total": 8,
+     "rejected": "和上一期的画面太像"
+    }
+   ]
+  },
+  "candidates": [
+   {
+    "id": "a1",
+    "label": "第 1 张",
+    "artSha256": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "qrOk": true,
+    "lint": {
+     "ok": true,
+     "text": "构图检查通过"
+    },
+    "locales": [
+     {
+      "locale": "zh-Hans",
+      "preview": "a1/render/zh-Hans/poster-preview.png",
+      "poster": "a1/render/zh-Hans/poster.png",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "locale": "ko",
+      "preview": "a1/render/ko/poster-preview.png",
+      "poster": "a1/render/ko/poster.png",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "locale": "es",
+      "preview": "a1/render/es/poster-preview.png",
+      "poster": "a1/render/es/poster.png",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   },
+   {
+    "id": "a2",
+    "label": "第 2 张",
+    "artSha256": "5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b",
+    "qrOk": true,
+    "lint": {
+     "ok": false,
+     "text": "主体偏低，标题区可能被挡"
+    },
+    "locales": [
+     {
+      "locale": "zh-Hans",
+      "preview": "a2/render/zh-Hans/poster-preview.png",
+      "poster": "a2/render/zh-Hans/poster.png",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "locale": "ko",
+      "preview": "a2/render/ko/poster-preview.png",
+      "poster": "a2/render/ko/poster.png",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "locale": "es",
+      "preview": "a2/render/es/poster-preview.png",
+      "poster": "a2/render/es/poster.png",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  ],
+  "upload": {
+   "note": "批准后，选中那一张的三语海报会上传到站点，并写进 App 读取的公告清单。不会发到聊天或邮件。",
+   "files": [
+    "/posters/demo-sample-20261129/zh-Hans-<哈希>.png",
+    "/posters/demo-sample-20261129/ko-<哈希>.png",
+    "/posters/demo-sample-20261129/es-<哈希>.png",
+    "/weekly-announcements-v1.json",
+    "/announcement-binding-receipts/demo-sample-20261129-<语言>.json"
+   ]
+  }
+ },
+ "lastDecision": null
+}

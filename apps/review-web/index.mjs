@@ -2,7 +2,7 @@
 import { $, h, demo, loadIndex, showFatal, pageHref, fmtWhen, STATE_TEXT, LOCALE_NAMES } from "./gate.mjs";
 
 const PAGES = { decisions: "decisions.html", english: "english.html", speakers: "speakers.html", track: "track.html",
-  study: "study.html", publish: "publish.html", confirm: "confirm.html" };
+  study: "study.html", publish: "publish.html", confirm: "confirm.html", poster: "poster.html" };
 
 function ago(iso) {
   const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));

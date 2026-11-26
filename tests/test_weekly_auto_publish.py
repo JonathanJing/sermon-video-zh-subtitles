@@ -56,16 +56,64 @@ class PublishRun(TrackRun):
                     media = out / "public" / "media" / config["pageId"]
                     media.mkdir(parents=True, exist_ok=True)
                     (media / f"{locale}.mp3").write_bytes(f"mp3 {locale}".encode())
-            if action in ("baseline", "stage1", "stage2"):
+            if action in ("baseline", "stage1", "stage2", "stage-posters"):
                 out = arg("--out")
                 (out / "public").mkdir(parents=True)
+                (out / "public" / "multilingual-v5.json").write_text(json.dumps({"pages": [], "snapshot": out.name}))
                 (out / "seal-report.json").write_text(json.dumps({"snapshot": out.name, "sealed": action}))
             if action == "verify":
                 arg("--out").write_text(json.dumps({"status": "pass"}))
             if action == "publish":
                 (arg("--snapshot") / "deployment-attempt-v2.json").write_text(json.dumps({"status": "deployed"}))
                 return done(out=line({"status": "deployed", "newVersion": f"v-{arg('--snapshot').name}", "baselineVersion": "v0", "catalogSha256": "cd" * 32}))
+            if action == "stage-posters":
+                files = sorted(str(p.relative_to(arg("--overlay"))) for p in arg("--overlay").rglob("*") if p.is_file())
+                return done(out=line({"staged": str(arg("--out")), "changed": ["/" + name for name in files], "posters": 3}))
             return done(out=line({"ok": True, "action": action}))
+        if script == "run.py" and str(command[2]).startswith("delivery.posters."):
+            module = str(command[2]).split(".")[-1]
+            self.order.append(f"poster:{module}")
+            self.commands.setdefault(f"poster:{module}", []).append([str(part) for part in command])
+            if f"poster:{module}" in self.fail:
+                return done(1, err=f"{module}: the image model did not answer")
+            if module == "announcement_sidecar":
+                out, locale, pid = arg("--out"), command[command.index("--locale") + 1], command[command.index("--page-id") + 1]
+                side = out / "weekly-announcements-v1.json"
+                value = json.loads(side.read_text()) if side.exists() else {"schemaVersion": "tongxing-weekly-announcements-v1", "announcements": []}
+                value["announcements"].append({"pageID": pid, "locale": locale, "poster": {"url": f"/posters/{pid}/{locale}-abc.png"}})
+                side.write_text(json.dumps(value))
+                (out / "posters" / pid).mkdir(parents=True, exist_ok=True)
+                (out / "posters" / pid / f"{locale}-abc.png").write_bytes(arg("--poster-file").read_bytes())
+                return done(out=line({"sidecar": str(side)}))
+            out = arg("--out")
+            out.mkdir(parents=True, exist_ok=True)
+            if module == "draft_design":
+                (out / "poster-design.draft.json").write_text(json.dumps({"draft": True}))
+                return done(out=line({"status": "drafted"}))
+            if module == "design":
+                row = lambda cid, concept, total: {"id": cid, "concept": concept, "primarySubject": "一座城", "anchorTier": "title", "anchorTerm": "再来",
+                                                   "total": total, "evidence": [{"textGroupId": "g1", "quote": "一句原文", "tier": "scripture"}]}
+                (out / "poster-design.json").write_text(json.dumps({"candidates": [row("c1", "清晨的城门", 11), row("c2", "一条路", 9)],
+                                                                    "choice": {"candidateId": "c1", "why": "立足标题", "rejected": {"c2": "只在例子里"}}}, ensure_ascii=False))
+                (out / "art-prompt.txt").write_text("draw a gate")
+                return done(out=line({"status": "validated"}))
+            if module == "artwork":
+                self.count.setdefault("art", 0)
+                self.count["art"] += 1
+                (out / "art.png").write_bytes(f"art {self.count['art']}".encode())
+                (out / "art-prompt.txt").write_text(arg("--prompt").read_text())
+                (out / "art-receipt.json").write_text(json.dumps({"status": "complete", "artSha256": f"{self.count['art']:064d}",
+                                                                 "composition": {"placement": "low" if self.count["art"] == 2 else "ok"}}))
+                return done(out=line({"status": "complete"}))
+            if module == "build":
+                reviewed = "--visual-reviewed" in command
+                (out / "poster-manifest.json").write_text(json.dumps({"art": arg("--art").read_text(), "reviewed": reviewed}))
+                for locale in ("zh-Hans", "ko", "es"):
+                    (out / locale).mkdir(exist_ok=True)
+                    (out / locale / "poster.png").write_bytes(f"poster {locale} {arg('--art').read_text()}".encode())
+                    (out / locale / "poster-preview.png").write_bytes(b"preview")
+                    (out / locale / "poster-receipt.json").write_text(json.dumps({"status": "complete" if reviewed else "qr_verified_visual_review_pending"}))
+                return done(out=line({"status": "complete" if reviewed else "qr_verified_visual_review_pending"}))
         if command[0] == "node":
             out = arg("--out")
             assert not out.exists(), "the fingerprint tool refuses an existing output"
@@ -103,10 +151,10 @@ def make(tmp_path, monkeypatch):
     monkeypatch.setenv("FAKE_CLAUDE_LOG", str(tmp_path / "calls.ndjson"))
     monkeypatch.setenv("FAKE_CLAUDE_MODE", "ok")
 
-    def build(through="publish", **run_options):
+    def build(through="publish", poster=False, **run_options):
         config = json.loads((ROOT / "config" / "weekly-sermon-auto.json").read_text(encoding="utf-8"))
         config["source"]["minBytes"] = 1000
-        config["automation"]["through"] = through
+        config["automation"].update(through=through, poster=poster)
         path = tmp_path / "config.json"
         path.write_text(json.dumps(config))
         (tmp_path / "ckpt" / "checkpoint-75d28").mkdir(parents=True, exist_ok=True)
@@ -214,7 +262,7 @@ def test_an_authorization_makes_exactly_the_two_deployments_then_the_gate_then_t
     assert len(confirm["data"]["notDelivered"]) == 2 and "没有做浏览器冒烟" in confirm["data"]["published"]["smoke"]
     assert driver.notifier().titles()[-2:] == ["[同行] 已生效 · 发布", "[同行] 已发布 · 请在手机上确认"]
     # the reviewer looks at the page on a device: only then is the production complete
-    decide(driver, "l4.device-confirm", {"pageId": PAGE, "locales": {}}, key="q" * 20, checks=("looked",))
+    decide(driver, "l4.device-confirm", {"pageId": PAGE, "locales": {}}, key="q" * 20, checks=("thisDevice",))
     record = driver.advance(NAME)
     assert record["state"] == "published" and record["stages"]["handoff"]["state"] == "done"
     receipt = json.loads((tmp_path / "artifacts" / "weekly-auto" / NAME / "device-confirmation.json").read_text())
@@ -360,3 +408,134 @@ def test_the_generated_page_configuration_is_what_was_written_by_hand_for_the_la
                                   speaker="Eric Geiger", sunday="2026-11-22", source_url=old["source"]["url"], window_end=10.0, sentences=3, reviewer="r", basis="b")
     assert series_first["titleCheck"] == {"englishTitle": "Jesus will return", "seriesKey": "revelation-comfort-and-hope", "mode": "table"}
     assert series_first["title"] == "启示录：耶稣带来的安慰与盼望 · 耶稣必再来"
+
+
+# ---------------------------------------------------------------- posters
+
+def to_poster_review(make, **options):
+    driver = make(poster=True, **options)
+    to_authorization(driver)
+    authorize(driver)
+    return driver, driver.advance(NAME)
+
+
+def poster_decision(driver, verdict="approved", key="r" * 20, **payload):
+    data = driver.store.descriptor(NAME, "l4.poster", REVIEWER)["data"]
+    return decide(driver, "l4.poster", {"pageId": data["pageId"], "round": data["round"], **payload}, verdict=verdict, key=key, checks=("looked", "upload"))
+
+
+def poster_calls(driver):
+    return [name for name in driver.run_command.order if name.startswith("poster:")]
+
+
+def test_after_the_page_is_live_the_posters_are_made_and_wait_for_a_choice(make, tmp_path):
+    driver, record = to_poster_review(make)
+    stages = {name: s["state"] for name, s in record["stages"].items()}
+    assert stages["gate.confirm"] == "done" and stages["gate.poster"] == "done" and stages["wait.poster"] == "waiting" and "poster.publish" not in stages
+    order = driver.run_command.order
+    assert order[order.index("gate") + 1:] == ["poster:draft_design", "poster:design", "poster:artwork", "poster:artwork", "poster:build", "poster:build"]
+    assert publish_calls(driver) == ["publish", "publish"], "the posters are not uploaded yet"
+    assert driver.notifier().titles()[-2:] == ["[同行] 已发布 · 请在手机上确认", "[同行] 待选 · 海报"]
+    gate = driver.store.descriptor(NAME, "l4.poster", REVIEWER)
+    data = gate["data"]
+    assert gate["kind"] == "poster" and set(gate["bindings"]) == {"pageId", "catalogSha256", "candidate.a1", "candidate.a2"}
+    assert data["round"] == 1 and data["design"]["chosen"]["concept"] == "清晨的城门" and data["design"]["others"][0]["rejected"] == "只在例子里"
+    assert [c["id"] for c in data["candidates"]] == ["a1", "a2"] and data["candidates"][0]["lint"]["ok"] and not data["candidates"][1]["lint"]["ok"]
+    assert all(c["qrOk"] for c in data["candidates"]) and data["candidates"][1]["locales"][2]["preview"] == "round-1/a2/render/es/poster-preview.png"
+    assert driver.store.asset(NAME, "l4.poster", "round-1/a1/render/ko/poster-preview.png").read_bytes() == b"preview"
+    assert f"/posters/{PAGE}/zh-Hans-<哈希>.png" in data["upload"]["files"] and "不会发到聊天或邮件" in data["upload"]["note"]
+    build = driver.run_command.commands["poster:build"][0]
+    assert "--visual-reviewed" not in build and build[build.index("--origin") + 1] == ORIGIN and "--non-production-proof" not in build
+
+
+def test_approving_one_poster_uploads_it_once_with_the_reviewer_on_the_receipt(make, tmp_path):
+    driver, _ = to_poster_review(make)
+    poster_decision(driver, choice="a2", artSha256="x")
+    record = driver.advance(NAME)
+    order = driver.run_command.order
+    tail = order[order.index("poster:build") + 2:]
+    assert tail == ["poster:build", "baseline", "poster:announcement_sidecar", "poster:announcement_sidecar", "poster:announcement_sidecar",
+                    "stage-posters", "publish-check", "publish", "readback-posters"]
+    reviewed = driver.run_command.commands["poster:build"][-1]
+    assert "--visual-reviewed" in reviewed and REVIEWER["name"] in reviewed[reviewed.index("--visual-reviewer") + 1] and "/a2/" in reviewed[reviewed.index("--art") + 1]
+    assert "--require-announcements" in driver.run_command.commands["publish-check"]
+    assert record["poster"]["state"] == "uploaded" and record["poster"]["choice"] == "a2" and len(record["poster"]["deployment"]["files"]) == 4
+    approval = json.loads((tmp_path / "artifacts" / "weekly-auto" / NAME / "poster-approval.json").read_text())
+    assert approval["humanApproval"] is True and approval["approvedBy"] == REVIEWER and "instruction to upload" in approval["uploadInstruction"]
+    assert publish_calls(driver) == ["publish"] * 3 and record["stages"]["wait.confirm"]["state"] == "waiting"
+    decide(driver, "l4.device-confirm", {"pageId": PAGE, "locales": {}}, key="q" * 20, checks=("thisDevice",))
+    assert driver.advance(NAME)["state"] == "published"
+    driver.advance(NAME)
+    assert publish_calls(driver) == ["publish"] * 3
+
+
+def test_none_of_them_draws_again_with_the_same_design_and_asks_again(make, tmp_path):
+    driver, _ = to_poster_review(make)
+    poster_decision(driver, verdict="changes_requested", next="redraw")
+    record = driver.advance(NAME)
+    assert record["poster"]["round"] == 2 and poster_calls(driver).count("poster:draft_design") == 1 and poster_calls(driver).count("poster:artwork") == 4
+    gate = driver.store.descriptor(NAME, "l4.poster", REVIEWER)
+    assert gate["revision"] == 2 and gate["data"]["round"] == 2 and gate["data"]["candidates"][0]["locales"][0]["poster"].startswith("round-2/a1/")
+    assert publish_calls(driver) == ["publish", "publish"]
+    poster_decision(driver, verdict="changes_requested", next="redesign", key="s" * 20)
+    record = driver.advance(NAME)
+    assert record["poster"]["round"] == 3 and poster_calls(driver).count("poster:draft_design") == 2
+    poster_decision(driver, verdict="changes_requested", next="redraw", key="t" * 20)
+    record = driver.advance(NAME)
+    assert record["poster"]["state"] == "failed" and "3 轮" in record["poster"]["message"] and record["stages"]["wait.confirm"]["state"] == "waiting"
+
+
+def test_no_poster_this_week_uploads_nothing_and_the_page_goes_on(make, tmp_path):
+    driver, _ = to_poster_review(make)
+    poster_decision(driver, verdict="changes_requested", next="skip")
+    record = driver.advance(NAME)
+    assert record["poster"]["state"] == "skipped" and publish_calls(driver) == ["publish", "publish"]
+    assert record["stages"]["poster.publish"]["state"] == "done" and record["stages"]["wait.confirm"]["state"] == "waiting"
+    assert not (tmp_path / "artifacts" / "weekly-auto" / NAME / "poster-approval.json").exists()
+
+
+def test_a_poster_that_cannot_be_drawn_is_announced_and_does_not_hold_the_page(make, tmp_path):
+    driver, record = to_poster_review(make, fail={"poster:artwork"})
+    assert record["state"] != "blocked" and record["poster"]["state"] == "failed" and record["poster"]["stage"] == "海报主视觉"
+    assert record["stages"]["wait.confirm"]["state"] == "waiting" and "l4.poster" not in [g["gateId"] for g in driver.store.gates(NAME)]
+    assert driver.notifier().titles()[-1] == f"[同行] 海报没有做成 · {PAGE}" and publish_calls(driver) == ["publish", "publish"]
+    decide(driver, "l4.device-confirm", {"pageId": PAGE, "locales": {}}, key="q" * 20, checks=("thisDevice",))
+    assert driver.advance(NAME)["state"] == "published"
+
+
+def test_posters_are_off_unless_the_configuration_turns_them_on(make, tmp_path):
+    driver = make()
+    to_authorization(driver)
+    authorize(driver)
+    record = driver.advance(NAME)
+    assert poster_calls(driver) == [] and not any(name.startswith("poster.") for name in record["stages"])
+
+
+def test_only_this_pages_poster_files_can_be_staged_and_other_announcements_stay(tmp_path, monkeypatch):
+    sys.path.insert(0, str(ROOT / "experiments" / "sentence-first-agent"))
+    sfa_publish = pytest.importorskip("sfa_publish")
+    from types import SimpleNamespace
+    cfg = SimpleNamespace(page_id=PAGE)
+    base, overlay = tmp_path / "base", tmp_path / "overlay"
+    (base / "public").mkdir(parents=True)
+    other = {"pageID": "another-page", "locale": "ko", "poster": {"url": "/posters/another-page/ko-1.png"}}
+    (base / "public" / "weekly-announcements-v1.json").write_text(json.dumps({"announcements": [other]}))
+    (overlay / "posters" / PAGE).mkdir(parents=True)
+    (overlay / "posters" / PAGE / "zh-Hans-abc.png").write_bytes(b"png")
+    (overlay / "announcement-binding-receipts").mkdir()
+    (overlay / "announcement-binding-receipts" / f"{PAGE}-zh-Hans.json").write_text("{}")
+    mine = {"pageID": PAGE, "locale": "zh-Hans", "poster": {"url": f"/posters/{PAGE}/zh-Hans-abc.png"}}
+    (overlay / "weekly-announcements-v1.json").write_text(json.dumps({"announcements": [other, mine]}))
+    staged = {}
+    monkeypatch.setattr(sfa_publish, "stage", lambda cfg, base, out, add, files, replace=frozenset(): staged.update(files=files, replace=replace))
+    result = sfa_publish.cmd_stage_posters(cfg, base, overlay, tmp_path / "out")
+    assert sorted(staged["files"]) == [f"announcement-binding-receipts/{PAGE}-zh-Hans.json", f"posters/{PAGE}/zh-Hans-abc.png", "weekly-announcements-v1.json"]
+    assert staged["replace"] == {"weekly-announcements-v1.json", f"announcement-binding-receipts/{PAGE}-zh-Hans.json"}, "an image is never overwritten"
+    assert result["announcements"] == {"zh-Hans": f"/posters/{PAGE}/zh-Hans-abc.png"}
+    (overlay / "weekly-announcements-v1.json").write_text(json.dumps({"announcements": [{**other, "locale": "es"}, mine]}))
+    with pytest.raises(ValueError, match="another page"):
+        sfa_publish.cmd_stage_posters(cfg, base, overlay, tmp_path / "out2")
+    (overlay / "weekly-announcements-v1.json").write_text(json.dumps({"announcements": [other, mine]}))
+    (overlay / "multilingual-v5.json").write_text("{}")
+    with pytest.raises(ValueError, match="Not a poster file"):
+        sfa_publish.cmd_stage_posters(cfg, base, overlay, tmp_path / "out3")

@@ -493,3 +493,214 @@ class PublishStages:
                       "scope": "这位审核人在自己的设备上看过页面；不是现场验收，也不是 App 商店版本的验收"})
         self.intent(record, confirmation={"decisionId": item["decisionId"], "by": item["reviewer"], "at": item["receivedAt"]})
         return _sha(path), "完成"
+
+
+# ---------------------------------------------------------------- posters, after the page is live
+
+POSTER_STAGES = ("poster.design", "poster.artwork", "poster.compose", "gate.poster", "wait.poster", "poster.publish")
+POSTER_ROUNDS = 3                                            # each round is new image generations: stop and say so after this many
+PLACEMENT = {"ok": (True, "构图检查通过"), "low": (False, "主体偏低，可能被下方的文字区挡住"), "unknown": (False, "构图检查没有结论")}
+
+
+class PosterStages:
+    """Mixed into weekly_auto.Driver, after the publish stages. A week's posters are drafted, drawn and
+    composed without anyone, then stop at the poster page: approving one there is the instruction to
+    upload it (user decision 2026-11-26), and nothing is uploaded before. Posters never hold the page:
+    a failure here is recorded and announced, and the production goes on to its confirmation."""
+
+    def poster_dir(self, record: dict) -> Path:
+        return self.work_root / "artifacts" / "sentence-first-agent" / f"{record['production']}-poster"
+
+    def poster_state(self, record: dict) -> dict:
+        return record.setdefault("poster", {"state": "running", "round": 1})
+
+    def poster_round(self, record: dict) -> Path:
+        return self.poster_dir(record) / f"round-{self.poster_state(record)['round']}"
+
+    def poster_candidates(self, record: dict) -> list[str]:
+        return [f"a{n + 1}" for n in range(int((self.config.get("automation") or {}).get("posterCandidates") or 2))]
+
+    def poster_module(self, record: dict, name: str, module: str, *args) -> dict:
+        env = {"SERMON_CODEX_CLI": self.local["codexCli"]} if self.local.get("codexCli") else None
+        out = self.step(record, name, [self.python, ROOT / "tools" / "ops" / "run.py", f"delivery.posters.{module}", *args], cwd=self.work_root, env=env)
+        return json.loads(out.strip().splitlines()[-1])
+
+    def poster_try(self, record: dict, name: str, work) -> str:
+        """Run one poster stage. What goes wrong is the poster's problem only."""
+        state = self.poster_state(record)
+        if state["state"] != "running":
+            return "done"
+        try:
+            return work()
+        except (self.Error, OSError, KeyError, ValueError, StopIteration) as exc:     # a missing or malformed poster file is also only the poster's problem
+            message = getattr(exc, "message", None) or f"{type(exc).__name__}: {exc}"[:200]
+            state.update(state="failed", stage=name, message=message)
+            self.notice(record, "poster.failed", once=f"poster.failed:{name}:{state['round']}", pageId=self.page(record)["pageId"], reason=f"{name}：{message}")
+            return "done"
+
+    def stage_poster_design(self, record: dict) -> str:
+        def work():
+            folder, page = self.poster_round(record), self.page(record)
+            if (folder / "design" / "poster-design.json").is_file():
+                return "done"
+            for name in ("draft", "design"):
+                shutil.rmtree(folder / name, ignore_errors=True)
+            self.worker(record, "海报设计", "根据已发布的文稿起草主视觉的概念")
+            release = self.publish_dir(record) / "stage2"
+            with self.heartbeat(record, "海报设计", lambda: "起草中"):
+                self.poster_module(record, "海报概念草稿", "draft_design", "--release", release, "--page-id", page["pageId"], "--out", folder / "draft")
+                self.poster_module(record, "海报设计校验", "design", "--design", folder / "draft" / "poster-design.draft.json", "--release", release,
+                                   "--page-id", page["pageId"], "--out", folder / "design")
+            return "done"
+        return self.poster_try(record, "海报设计", work)
+
+    def stage_poster_artwork(self, record: dict) -> str:
+        def work():
+            folder = self.poster_round(record)
+            for index, candidate in enumerate(self.poster_candidates(record)):
+                out = folder / candidate / "art"
+                if (out / "art-receipt.json").is_file():
+                    continue
+                if (out / "started.json").is_file():        # a generation without a recorded answer: never sent again by itself
+                    raise self.Error("unknown_outcome", f"{candidate} 的图像生成没有确认结果，不会自动重发")
+                shutil.rmtree(out, ignore_errors=True)
+                self.worker(record, "海报主视觉", f"第 {index + 1} / {len(self.poster_candidates(record))} 张")
+                with self.heartbeat(record, "海报主视觉", lambda: "图像生成中"):
+                    self.poster_module(record, f"海报主视觉 {candidate}", "artwork", "--prompt", folder / "design" / "art-prompt.txt", "--out", out, "--retry-on-low")
+            return "done"
+        return self.poster_try(record, "海报主视觉", work)
+
+    def poster_build(self, record: dict, candidate: str, *extra) -> dict:
+        folder, page = self.poster_round(record) / candidate, self.page(record)
+        origin = _read(self.publish_dir(record) / "preflight.json")["origin"]
+        proof = [] if page["environment"] == "production" else ["--non-production-proof"]
+        return self.poster_module(record, f"海报合成 {candidate}", "build", "--release", self.publish_dir(record) / "stage2", "--page-id", page["pageId"],
+                                  "--origin", origin, "--art", folder / "art" / "art.png", "--art-prompt", folder / "art" / "art-prompt.txt",
+                                  "--out", folder / "render", *proof, *extra)
+
+    def stage_poster_compose(self, record: dict) -> str:
+        def work():
+            for candidate in self.poster_candidates(record):
+                if not (self.poster_round(record) / candidate / "render" / "poster-manifest.json").is_file():
+                    shutil.rmtree(self.poster_round(record) / candidate / "render", ignore_errors=True)
+                    self.worker(record, "海报合成", f"{candidate}：三种语言的标题、二维码和主视觉")
+                    self.poster_build(record, candidate)
+            return "done"
+        return self.poster_try(record, "海报合成", work)
+
+    def poster_bindings(self, record: dict) -> dict:
+        folder = self.poster_round(record)
+        return {"pageId": self.page(record)["pageId"], "catalogSha256": _sha(self.publish_dir(record) / "stage2" / "public" / "multilingual-v5.json"),
+                **{f"candidate.{candidate}": _sha(folder / candidate / "render" / "poster-manifest.json") for candidate in self.poster_candidates(record)}}
+
+    def stage_gate_poster(self, record: dict) -> str:
+        def work():
+            folder, page, state = self.poster_round(record), self.page(record), self.poster_state(record)
+            design = _read(folder / "design" / "poster-design.json")
+            chosen = next(item for item in design["candidates"] if item["id"] == design["choice"]["candidateId"])
+            rejected = design["choice"].get("rejected") or {}
+            pick = lambda item: {key: item.get(key) for key in ("id", "concept", "primarySubject", "anchorTier", "anchorTerm", "total")}
+            candidates = []
+            for index, candidate in enumerate(self.poster_candidates(record)):
+                art = _read(folder / candidate / "art" / "art-receipt.json")
+                ok, text = PLACEMENT.get((art.get("composition") or {}).get("placement"), (False, "构图检查没有结论"))
+                receipts = {locale: _read(folder / candidate / "render" / locale / "poster-receipt.json") for locale in page["locales"]}
+                candidates.append({
+                    "id": candidate, "label": f"第 {index + 1} 张", "artSha256": art["artSha256"], "lint": {"ok": ok, "text": text},
+                    "qrOk": all(receipt and receipt.get("status") in ("qr_verified_visual_review_pending", "complete") for receipt in receipts.values()),
+                    "locales": [{"locale": locale, "preview": f"round-{state['round']}/{candidate}/render/{locale}/poster-preview.png",
+                                 "poster": f"round-{state['round']}/{candidate}/render/{locale}/poster.png",
+                                 "sha256": _sha(folder / candidate / "render" / locale / "poster.png")} for locale in page["locales"]]})
+            pid = page["pageId"]
+            data = {"pageId": pid, "title": page["title"], "origin": _read(self.publish_dir(record) / "preflight.json")["origin"], "round": state["round"],
+                    "design": {"why": design["choice"].get("why") or "", "chosen": {**pick(chosen), "evidence": chosen["evidence"]},
+                               "others": [{**pick(item), "rejected": rejected.get(item["id"])} for item in design["candidates"] if item["id"] != chosen["id"]]},
+                    "candidates": candidates,
+                    "upload": {"note": "批准后，选中那一张的各语言海报会上传到站点，并写进 App 读取的公告清单。不会发到聊天或邮件。",
+                               "files": [f"/posters/{pid}/{locale}-<哈希>.png" for locale in page["locales"]]
+                                        + ["/weekly-announcements-v1.json", f"/announcement-binding-receipts/{pid}-<语言>.json"]}}
+            gate = self.store.open_gate(record["production"], gate_id="l4.poster", kind="poster", title="海报", bindings=self.poster_bindings(record), data=data,
+                                        assets_root=self.poster_dir(record), summary=f"{pid} · {len(candidates)} 张候选 · 第 {state['round']} 轮")
+            self.notice(record, "gate.opened", kind="poster", gate_id="l4.poster", revision=gate["revision"], pageId=pid, candidates=len(candidates))
+            return "done"
+        return self.poster_try(record, "海报审核页", work)
+
+    def stage_wait_poster(self, record: dict) -> str:
+        if self.poster_state(record)["state"] != "running":
+            return "done"
+        return self.wait_for(record, ["l4.poster"])
+
+    def apply_poster(self, record: dict, item: dict) -> tuple[str, str]:
+        """An approval: the reviewer picked one candidate and told us to upload it."""
+        decision, state = item["decision"], self.poster_state(record)
+        if decision["bindings"] != self.poster_bindings(record):
+            raise self.Error("stale", "候选海报在提交后变了")
+        choice = decision["payload"].get("choice")
+        if choice not in self.poster_candidates(record) or not decision["checks"].get("upload"):
+            raise self.Error("unsupported", "批准里没有选中的海报，或没有上传的指示")
+        path = self.store.production_dir(record["production"]) / "poster-approval.json"
+        _write(path, {"schemaVersion": "weekly-auto-poster-approval-v1", "pageId": self.page(record)["pageId"], "round": state["round"], "choice": choice,
+                      "artSha256": decision["payload"].get("artSha256"), "bindings": decision["bindings"], "humanApproval": True,
+                      "uploadInstruction": "the approval on the poster page (user decision 2026-11-26: approving a poster there is the instruction to upload it)",
+                      "decisionId": item["decisionId"], "approvedBy": item["reviewer"], "approvedAt": item["receivedAt"],
+                      "authority": self.config["authorizations"]["pageDecisions"]})
+        state.update(choice=choice, approval=item["decisionId"])
+        return _sha(path), "上传海报"
+
+    def poster_next(self, record: dict, item: dict) -> str:
+        """None of the candidates: draw again, design again, or no poster this week."""
+        state, wanted = self.poster_state(record), item["decision"]["payload"].get("next") or "redraw"
+        if wanted == "skip":
+            state.update(state="skipped", reason=item["decision"].get("note") or "审核人选择本周不发海报")
+            return "本周不发海报"
+        if state["round"] >= POSTER_ROUNDS:
+            state.update(state="failed", stage="海报审核页", message=f"已经出了 {POSTER_ROUNDS} 轮候选都没有选中")
+            return "候选轮数用完，海报改按手工流程做"
+        previous = self.poster_round(record)
+        state["round"] += 1
+        if wanted == "redraw":                              # the same validated design, new pictures
+            shutil.copytree(previous / "design", self.poster_round(record) / "design")
+        for stage in ("poster.design", "poster.artwork", "poster.compose", "gate.poster", "wait.poster", "poster.publish"):
+            record["stages"].pop(stage, None)
+        return "重新画" if wanted == "redraw" else "换概念重新设计"
+
+    def stage_poster_publish(self, record: dict) -> str:
+        """Upload the chosen posters: mark the review, bind each language to its release, stage on a fresh
+        baseline, check, deploy once, read back."""
+        def work():
+            state, page, folder = self.poster_state(record), self.page(record), self.poster_dir(record)
+            approval = _read(self.store.production_dir(record["production"]) / "poster-approval.json")
+            if not approval or approval["round"] != state["round"] or approval["bindings"] != self.poster_bindings(record):
+                raise self.Error("authorization", "没有对这一轮候选的批准")
+            chosen, pid = self.poster_round(record) / approval["choice"] / "render", page["pageId"]
+            snapshot = folder / "stage"
+            attempt = _read(snapshot / "deployment-attempt-v2.json")
+            if attempt and attempt.get("status") != "deployed":
+                raise self.Error("unknown_outcome", f"上一次上传的结果是 {attempt.get('status')}：先核对线上版本，不要重试")
+            if not attempt:
+                who = approval["approvedBy"]
+                self.worker(record, "上传海报", "绑定到各语言的 release，取线上现状")
+                self.poster_build(record, approval["choice"], "--visual-reviewed", "--visual-reviewer",
+                                  f"{who.get('name') or who.get('login')} (review page, decision {approval['decisionId']})")
+                for name in ("baseline", "overlay", "stage"):
+                    shutil.rmtree(folder / name, ignore_errors=True)
+                with self.heartbeat(record, "上传海报", lambda: "取线上现状并核对"):
+                    self.sfa_publish(record, "线上现状（海报）", "baseline", "--out", folder / "baseline")
+                    public, overlay = folder / "baseline" / "public", folder / "overlay"
+                    overlay.mkdir(parents=True)
+                    if (public / "weekly-announcements-v1.json").is_file():
+                        shutil.copyfile(public / "weekly-announcements-v1.json", overlay / "weekly-announcements-v1.json")
+                    origin = _read(self.publish_dir(record) / "preflight.json")["origin"]
+                    for locale in page["locales"]:
+                        self.poster_module(record, f"海报绑定 {locale}", "announcement_sidecar", "--catalog", public / "multilingual-v5.json",
+                                           "--release", public / "releases-v2" / pid / f"{locale}.json", "--poster-receipt", chosen / locale / "poster-receipt.json",
+                                           "--poster-file", chosen / locale / "poster.png", "--locale", locale, "--page-id", pid, "--out", overlay, "--origin", origin)
+                    staged = self.sfa_publish(record, "海报快照", "stage-posters", "--base", folder / "baseline", "--overlay", overlay, "--out", snapshot)
+                    self.sfa_publish(record, "部署前核对（海报）", "publish-check", "--snapshot", snapshot, "--baseline", folder / "baseline", "--require-announcements")
+                with self.heartbeat(record, "上传海报", lambda: "上传并切换版本"):
+                    result = self.sfa_publish(record, "海报部署", "publish", "--snapshot", snapshot)
+                state.update(deployment={**result, "at": self.now(), "files": staged["changed"]})
+            self.sfa_publish(record, "回读海报", "readback-posters", "--snapshot", snapshot)
+            state.update(state="uploaded")
+            return "done"
+        return self.poster_try(record, "上传海报", work)

@@ -96,7 +96,8 @@
               "track",
               "study",
               "publish",
-              "confirm"
+              "confirm",
+              "poster"
             ]
           },
           "locale": {

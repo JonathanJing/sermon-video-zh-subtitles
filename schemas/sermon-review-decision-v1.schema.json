@@ -36,7 +36,8 @@
         "track",
         "study",
         "publish",
-        "confirm"
+        "confirm",
+        "poster"
       ]
     },
     "production": {
