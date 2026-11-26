@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261125-weekly-auto-paid-transcription",
+  "runs": [
+    {
+      "label": "rehearsal-20261125-paid",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekly-auto/rehearsal-20261125-paid",
+      "skipped": {
+        "(none)": 1,
+        ".lock": 1,
+        ".ndjson": 1,
+        ".json": 5
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "rehearsal-20261125-paid",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2569,
+      "truncated": false,
+      "sha256": "7fb088fab6bed0570bb15cbbb773f7dee56396008bcdba94e854391de117ed17",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-paid",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 591,
+      "truncated": false,
+      "sha256": "ad60b8e2b066c119c7f5176e0a2930a8f89b38ec25c65a20b6f2572c3368087b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
