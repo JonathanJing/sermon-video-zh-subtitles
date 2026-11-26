@@ -1,0 +1,49 @@
+{
+ "production": "rehearsal-20261125b",
+ "state": "running",
+ "rehearsal": true,
+ "worker": {
+  "lastSeenAt": "2026-11-26T00:24:55+00:00",
+  "state": "等待",
+  "stage": "等你审核",
+  "detail": "英文表批准"
+ },
+ "stages": {
+  "source.accept": "done",
+  "source.download": "done",
+  "source.derive": "done",
+  "gate.decisions": "done",
+  "l1.prompt": "done",
+  "l1.transcribe": "done",
+  "l1.anchor": "done",
+  "l1.rows": "done",
+  "gate.english": "done",
+  "wait.review": "waiting"
+ },
+ "failed": {}
+}
+{
+ "production": "rehearsal-20261125b",
+ "state": "rehearsal_complete",
+ "rehearsal": true,
+ "worker": {
+  "lastSeenAt": "2026-11-26T00:25:10+00:00",
+  "state": "空闲",
+  "stage": "Layer 1 完成",
+  "detail": "演练结束"
+ },
+ "stages": {
+  "source.accept": "done",
+  "source.download": "done",
+  "source.derive": "done",
+  "gate.decisions": "done",
+  "l1.prompt": "done",
+  "l1.transcribe": "done",
+  "l1.anchor": "done",
+  "l1.rows": "done",
+  "gate.english": "done",
+  "wait.review": "done",
+  "handoff": "done"
+ },
+ "failed": {}
+}
