@@ -357,6 +357,10 @@ def revise(args) -> dict:
     (args.out / "english-edits-applied.json").write_text(
         json.dumps(record, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     summary.update(replaced=len(record["replaced"]), merges=len(record["merges"]), dropped=len(record["dropped"]))
+    if args.text_chunks and args.text_chunks.exists():
+        check = second_pass(revised["sourceUnits"], json.loads(args.text_chunks.read_text(encoding="utf-8")))
+        (args.out / "english-crosscheck.json").write_text(json.dumps(
+            {"anchorManifestJsonSha256": summary["anchorManifestJsonSha256"], "units": check}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False))
     return summary
 
@@ -380,6 +384,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--candidate", type=Path, required=True)
     r.add_argument("--edits", type=Path, required=True, help="JSON: replace / mergeWithPrevious / drop")
     r.add_argument("--out", type=Path, required=True)
+    r.add_argument("--text-chunks", type=Path, help="gpt-4o-chunks.json: rewrite the per-unit cross-check for the revised units")
     return parser
 
 

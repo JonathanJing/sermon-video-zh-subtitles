@@ -267,12 +267,13 @@ def test_kickoff_choices_the_driver_cannot_carry_out_are_reported_not_approved(d
     assert driver.notifier().messages[-1].title == "[同行] 决定没能应用 · 开工决定"
 
 
-def test_a_request_for_changes_waits_and_a_rebuild_opens_a_new_revision(driver, tmp_path):
+def test_a_request_for_changes_without_edits_waits_and_a_rebuild_opens_a_new_revision(driver, tmp_path):
     start(driver)
     name = "20261121-sermon"
-    submit(driver, name, "l1.english-review", {"edits": {"drop": ["u0005"]}}, verdict="changes_requested", note="第 5 句是掌声", key="b" * 20)
+    submit(driver, name, "l1.english-review", {"edits": {}}, verdict="changes_requested", note="第 5 句是掌声，整句删掉", key="b" * 20)
     driver.advance(name)
-    assert driver.store.gate(name, "l1.english-review")["state"] == "changes_requested"
+    assert driver.store.gate(name, "l1.english-review")["state"] == "changes_requested", "a note alone needs someone to act on it"
+    assert driver.store.last_decision(name, "l1.english-review")["nextStage"] is None
     assert driver.notifier().messages[-1].title == "[同行] 已收到修改要求 · 英文表"
     fixes = tmp_path / "fixes.json"
     fixes.write_text(json.dumps({"drop": ["u0005"]}))
@@ -289,6 +290,32 @@ def test_a_request_for_changes_waits_and_a_rebuild_opens_a_new_revision(driver, 
     gate = driver.store.descriptor(name, "l1.english-review", REVIEWER)
     assert (gate["revision"], gate["state"], len(gate["data"]["rows"])) == (2, "open", 6)
     assert driver.notifier().titles().count("[同行] 待批准 · 英文表") == 2, "a new revision is announced again"
+
+
+def test_a_request_for_changes_with_edits_applies_them_and_asks_again(driver, tmp_path):
+    start(driver)
+    name = "20261121-sermon"
+    submit(driver, name, "l0.decisions", kickoff_payload(driver, name), key="a" * 20)
+    submit(driver, name, "l1.english-review", {"edits": {"replace": {"u0003": "The writer says the city had twelve gates."}, "drop": ["u0007"]},
+                                               "heardUnitIds": ["u0003"]}, verdict="changes_requested", key="b" * 20)
+    record = driver.advance(name)
+    gate = driver.store.descriptor(name, "l1.english-review", REVIEWER)
+    assert (gate["revision"], gate["state"], len(gate["data"]["rows"])) == (2, "open", 6) and record["stages"]["wait.review"]["state"] == "waiting"
+    row = next(r for r in gate["data"]["rows"] if r["id"] == "u0003")
+    assert row["english"] == "The writer says the city had twelve gates." and row["flags"][0] == "reviewer" and row["before"] == SENTENCES[2]
+    titles = driver.notifier().titles()
+    assert titles[-2:] == ["[同行] 已收到修改要求 · 英文表", "[同行] 待批准 · 英文表"], "the next version is announced"
+    layer1 = tmp_path / "artifacts/sentence-first-agent" / f"{name}-source" / "layer1"
+    assert json.loads((layer1 / "candidates" / "r1" / "anchor-manifest.json").read_text())["counts"]["sourceUnits"] == 7
+    history = [json.loads(line) for line in (layer1 / "reviewer-edits-history.ndjson").read_text().splitlines()]
+    assert len(history) == 1 and history[0]["dropped"] == ["u0007"] and not (layer1 / "english-source.json").exists()
+    submit(driver, name, "l1.english-review", {"edits": {}, "heardUnitIds": [],
+                                               "approval": {"mode": "default_approve_unreviewed", "units": 6, "lookedAtUnits": 0}}, key="c" * 20)
+    record = driver.advance(name)
+    package = json.loads((layer1 / "english-source.json").read_text())
+    assert record["state"] == "layer1_ready" and len(package["units"]) == 6
+    assert package["units"][2]["english"] == "The writer says the city had twelve gates."
+    assert package["review"]["reviewScope"]["approvedByDefaultUnits"] == 6
 
 
 @pytest.mark.parametrize("kwargs, reason", [({"mime": "application/pdf"}, "不是视频文件"), ({"size": 10}, "不像一场证道"),

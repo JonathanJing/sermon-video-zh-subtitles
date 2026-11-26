@@ -524,7 +524,8 @@ class Driver:
         self.worker(record, "准备英文审核页", "切每句的原声")
         command = [self.python, str(EXP / "l1_review_rows.py"), "--manifest", str(candidate / "anchor-manifest.json"),
                    "--audio", str(run / "source" / "source.wav"), "--out", str(out), "--file-name", record["source"]["name"],
-                   "--crosscheck", str(candidate / "english-crosscheck.json"), "--fixes-applied", str(candidate / "english-fixes-applied.json")]
+                   "--crosscheck", str(candidate / "english-crosscheck.json"), "--fixes-applied", str(candidate / "english-fixes-applied.json"),
+                   "--reviewer-edits", str(candidate / "english-edits-applied.json")]
         self.step(record, "英文审核数据", command)
         return "done"
 
@@ -592,10 +593,12 @@ class Driver:
                 if kind not in ("decisions", "english"):
                     raise StageError("unsupported", "这一步还没有接到自动流程")
                 if decision["verdict"] == "changes_requested":
-                    done("applied")
                     edits = (decision["payload"].get("edits") or {}) if kind == "english" else {}
-                    count = sum(len(edits.get(name) or []) for name in ("replace", "mergeWithPrevious", "drop")) or 1
-                    self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, once=f"changes:{item['decisionId']}", count=count)
+                    count = sum(len(edits.get(name) or []) for name in ("replace", "mergeWithPrevious", "drop"))
+                    if count:
+                        self.rebuild_english(record, item)        # the reviewer's own edits: apply them and show the next version
+                    done("applied", next_stage="按你的修改重出一版，再请你批准" if count else None)
+                    self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, once=f"changes:{item['decisionId']}", count=count or 1)
                     continue
                 receipt, following = (self.apply_kickoff if kind == "decisions" else self.apply_english)(record, item)
                 done("applied", receipt_sha256=receipt, next_stage=following)
@@ -610,6 +613,30 @@ class Driver:
                     self.notice(record, "decision.failed", kind=kind, gate_id=gate_id, once=f"failed:{item['decisionId']}", reason=exc.message)
             self.log(record["production"], "decision.handled", decisionId=item["decisionId"], gate=gate_id,
                      outcome=self.store.outcome(record["production"], gate_id, item["decisionId"])["outcome"])
+
+    def rebuild_english(self, record: dict, item: dict) -> None:
+        """Apply the edits of a request for changes to the candidate it was about, and queue the next review round."""
+        run, decision = self.source_run(record), item["decision"]
+        layer1, candidate = run / "layer1", run / "layer1" / "candidate"
+        manifest = read_json(candidate / "anchor-manifest.json")
+        if decision["bindings"] != {"anchorManifestJsonSha256": json_sha(manifest), "sourceMediaSha256": record["source"]["sha256"]}:
+            raise StageError("stale", "句表在提交后变了")
+        folder = self.store.gate_dir(record["production"], decision["gateId"])
+        edits_path = folder / f"edits-{item['decisionId']}.json"
+        review_gates.write_json(edits_path, decision["payload"].get("edits") or {})
+        earlier = layer1 / "candidates" / f"r{decision['revision']}"
+        earlier.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(candidate / "anchor-manifest.json", earlier / "anchor-manifest.json")
+        try:
+            self.step(record, "应用修改", [self.python, str(EXP / "l1_anchor.py"), "revise", "--candidate", str(earlier / "anchor-manifest.json"),
+                                       "--edits", str(edits_path), "--out", str(candidate), "--text-chunks", str(layer1 / "gpt-4o-chunks.json")])
+        except StageError as exc:
+            raise StageError("process", exc.message) from exc
+        applied = read_json(candidate / "english-edits-applied.json")
+        with (layer1 / "reviewer-edits-history.ndjson").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"decisionId": item["decisionId"], "receivedAt": item["receivedAt"], **applied}, ensure_ascii=False) + "\n")
+        for stage in ("l1.rows", "gate.english", "wait.review", "handoff"):
+            record["stages"].pop(stage, None)
 
     def apply_kickoff(self, record: dict, item: dict) -> tuple[str, str]:
         decision, source = item["decision"], record["source"]
@@ -828,6 +855,8 @@ def build_parser() -> argparse.ArgumentParser:
     rebuild = commands.add_parser("rebuild-english", help="rebuild the sentence table (with machine fixes) and reopen its review")
     rebuild.add_argument("--production", required=True)
     rebuild.add_argument("--fixes", type=Path, help="machine fixes: global / text / merge / drop")
+    rebuild.add_argument("--from-last-request", action="store_true",
+                         help="apply the edits of the latest request for changes instead of rebuilding from the transcript")
     agents = commands.add_parser("agents", help="the two LaunchAgents: review service and driver")
     agents.add_argument("action", choices=("print", "install", "uninstall", "status"))
     agents.add_argument("--port", type=int)
@@ -864,6 +893,16 @@ def main(argv=None) -> int:
                 budget.close(entry["id"], "settled" if args.outcome == "charged" else "released",
                              entry["reservedUsd"] if args.outcome == "charged" else None)
         driver.log(args.production, "budget.reconciled", outcome=args.outcome)
+    elif args.from_last_request:
+        record = driver.store.production(args.production)
+        folder = driver.store.gate_dir(args.production, "l1.english-review") / "decisions"
+        requests = [read_json(path) for path in sorted(folder.glob("*.json"))]
+        requests = [item for item in requests if item["decision"]["verdict"] == "changes_requested"]
+        if not requests:
+            raise SystemExit("no request for changes on the English table")
+        driver.rebuild_english(record, requests[-1])
+        driver.save(record)
+        record = driver.advance(args.production)
     else:  # rebuild-english
         record = driver.store.production(args.production)
         layer1 = driver.source_run(record) / "layer1"

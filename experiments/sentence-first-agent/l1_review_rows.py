@@ -5,6 +5,7 @@ Cuts one 16 kHz mono WAV per unit from source.wav (stdlib wave, exact sample bou
 writes rows.json: per unit the text, the times, and the reasons to look at it:
 
   edited     a machine fix changed the text (the page shows the text before the fix)
+  reviewer   the reviewer changed the text in an earlier round (the page shows the text before it)
   disagree   the two transcription passes read this unit differently (the page shows the other reading)
   number     the text has a number or a chapter/verse reference
   long       longer than --long-seconds
@@ -38,16 +39,20 @@ def slice_wav(source: wave.Wave_read, start: float, end: float, target: Path) ->
         out.writeframes(data)
 
 
-def build_rows(manifest: dict, *, fixes: dict | None = None, crosscheck: dict | None = None, long_seconds: float = 12.0) -> list[dict]:
+def build_rows(manifest: dict, *, fixes: dict | None = None, crosscheck: dict | None = None, long_seconds: float = 12.0,
+               reviewer_edits: dict | None = None) -> list[dict]:
     edited: dict[str, dict] = {}
     for item in (fixes or {}).get("fixes", []):
         edited.setdefault(item["after"], item)
+    mine = {item["after"]: item["before"] for item in (reviewer_edits or {}).get("replaced", [])}
     checked = (crosscheck or {}).get("units", {})
     rows = []
     for unit in manifest["sourceUnits"]:
         text, unit_id = unit["english"], unit["sourceUnitId"]
         flags = []
-        if text in edited:
+        if text in mine:
+            flags.append("reviewer")
+        elif text in edited:
             flags.append("edited")
         second = checked.get(unit_id)
         if second and not second["agrees"]:
@@ -58,7 +63,7 @@ def build_rows(manifest: dict, *, fixes: dict | None = None, crosscheck: dict | 
             flags.append("long")
         rows.append({"id": unit_id, "start": unit["start"], "end": unit["end"],
                      "seconds": round(unit["end"] - unit["start"], 2), "english": text, "flags": flags,
-                     "before": edited[text]["before"] if text in edited else None,
+                     "before": mine[text] if text in mine else (edited[text]["before"] if text in edited else None),
                      "secondPass": second["secondPass"] if second and not second["agrees"] else None,
                      "audio": f"slices/{unit_id}.wav"})
     return rows
@@ -71,6 +76,7 @@ def main(argv=None) -> int:
     parser.add_argument("--out", type=Path, required=True, help="asset directory for the review step")
     parser.add_argument("--fixes-applied", type=Path, help="english-fixes-applied.json")
     parser.add_argument("--crosscheck", type=Path, help="english-crosscheck.json")
+    parser.add_argument("--reviewer-edits", type=Path, help="english-edits-applied.json from an earlier review round")
     parser.add_argument("--file-name", default="")
     parser.add_argument("--transcription", default="whisper-1 给词级时间，gpt-4o-transcribe 做第二遍文字核对；不是 MFA 对齐")
     parser.add_argument("--long-seconds", type=float, default=12.0)
@@ -78,7 +84,8 @@ def main(argv=None) -> int:
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     load = lambda path: json.loads(path.read_text(encoding="utf-8")) if path and path.exists() else None
-    rows = build_rows(manifest, fixes=load(args.fixes_applied), crosscheck=load(args.crosscheck), long_seconds=args.long_seconds)
+    rows = build_rows(manifest, fixes=load(args.fixes_applied), crosscheck=load(args.crosscheck), long_seconds=args.long_seconds,
+                      reviewer_edits=load(args.reviewer_edits))
     slices = args.out / "slices"
     slices.mkdir(parents=True, exist_ok=True)
     wanted = {f"{row['id']}.wav" for row in rows}
@@ -94,7 +101,7 @@ def main(argv=None) -> int:
             "rows": rows}
     (args.out / "rows.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(json.dumps({"rows": len(rows), "flagged": sum(1 for row in rows if row["flags"]),
-                      "counts": {name: sum(1 for row in rows if name in row["flags"]) for name in ("edited", "disagree", "number", "long")},
+                      "counts": {name: sum(1 for row in rows if name in row["flags"]) for name in ("reviewer", "edited", "disagree", "number", "long")},
                       "out": str(args.out)}, ensure_ascii=False))
     return 0
 

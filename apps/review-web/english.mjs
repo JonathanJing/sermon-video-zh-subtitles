@@ -1,7 +1,7 @@
 // l1.english-review: approve the English sentence table (Layer 1) before translation starts.
 import { $, h, loadGate, showFatal, setupDecision, createDraft, createClipPlayer, playButton, fmtClock, fmtDuration } from "./gate.mjs";
 
-const FLAGS = { edited: ["机器改过", "warn"], disagree: ["两遍不一致", "warn"], number: ["数字／经文", ""], long: ["超过 12 秒", ""] };
+const FLAGS = { reviewer: ["你上一版改的", "good"], edited: ["机器改过", "warn"], disagree: ["两遍不一致", "warn"], number: ["数字／经文", ""], long: ["超过 12 秒", ""] };
 const state = { replace: {}, merge: new Set(), drop: new Set(), heard: new Set(), filter: "all", query: "", editing: null };
 let gate, rows, decision, draft;
 
