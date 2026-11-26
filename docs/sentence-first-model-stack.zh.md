@@ -35,7 +35,7 @@
 - 冒烟（2026-11-14）：两句英文，输出两行合法 JSON，`done 2`，9.8 s，`claude-opus-5-5`，费用 $0.1485（含 15.7k cache creation）。整期 460 句的三语翻译本轮没有执行。
 - 派发脚本里的 week-9 run 名是本期占位，今晚改成 `20261115-*`；提示词、模型和参数不变。
 
-- 2026-11-25 起派发脚本在仓库里：`experiments/sentence-first-agent/opus_tasks.py`（`brief`／`translate`／`audit`／`rewrite`），CLI 调用方式不变。同步改写也用同一个栈（用户决定：先 Opus 口语化，不够再 Opus 精简，不用 DeepSeek）。生产机 mbp16 上的 CLI 版本是 2.1.292，与上面冻结的 2.1.325 不同。
+- 2026-11-25 起派发脚本在仓库里：`experiments/sentence-first-agent/opus_tasks.py`（`brief`／`translate`／`audit`／`rewrite`／`repair`），CLI 调用方式不变。同步改写也用同一个栈（用户决定：先 Opus 口语化，不够再 Opus 精简，不用 DeepSeek）。生产机 mbp16 上的 CLI 版本是 2.1.292，与上面冻结的 2.1.325 不同。
 
 ## L3 Spark TTS
 

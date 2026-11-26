@@ -5,6 +5,7 @@
     opus_tasks.py translate --run RUN --locale L --episode EPISODE.json --brief BRIEF.json [--parts 4]
     opus_tasks.py audit     --run RUN --locale L --episode EPISODE.json --brief BRIEF.json [--apply]
     opus_tasks.py rewrite   --run RUN --locale L --mode colloquial|condense --select estimate|measured
+    opus_tasks.py repair    --run RUN --locale L --issues ISSUES.json --episode EPISODE.json --brief BRIEF.json [--apply]
 
 Every task is one or more `claude -p <prompt> --model opus --permission-mode acceptEdits` calls
 (the stack in docs/sentence-first-model-stack.zh.md). A call gets one input file and writes one
@@ -25,6 +26,12 @@ then reported; nothing is retried without limit.
              `condense` shortens what still does not fit, removing only repetition, filler and
              restatement. The order is fixed: colloquial first, condense only if that was not
              enough (user decision 2026-11-25; DeepSeek is not used for this).
+
+  repair     for the sentences a track reviewer sent back. The reviewer's tags and note go to the
+             model with the English, the current wording and what the voice actually read; it
+             returns either a new wording or "render again" for a sentence whose text is right.
+             With --apply the new wordings become revisions in review.json. The reviewer hears
+             every one of them again; nothing here approves anything.
 
 The episode file carries the facts a prompt needs: speaker, series and title per language, the
 English title. The prompts and conventions are the week-11 ones with the episode-specific lists
@@ -184,6 +191,32 @@ REWRITE_PROMPT = {
 只写这个输出文件；最后只回复一行：done <行数>。
 """,
 }
+
+ISSUE_TAGS = {"translation": "译文", "reading": "读音", "facts": "数字／人名／经文", "audio": "音质", "sync": "不同步", "other": "其他"}
+
+REPAIR_PROMPT = """\
+你在修改一篇证道的{label}配音稿里被听审人退回的句子，只做这一件事。听审人听过整条配音，标出了有问题的句子。
+
+上下文：讲员 {speaker}，系列 {series}，英文标题 {englishTitle}。
+
+输入文件：{input}
+每行是一个 JSON：{{"id","english","target","spoken","before","after","tags","note"}}。
+- `english` 是英文原句（ASR 转写稿）；`target` 是现在的译文；`spoken` 是配音实际念的文字（数字等已换成读法，可能和译文不同）。
+- `before`、`after` 是前后句的译文，只作语境，不要改它们。
+- `tags` 是听审人选的问题类型；`note` 是听审人写的话，可能直接给了改法。
+
+逐句处理：
+1. 听审人写了改成什么，就照他写的改，不要再自行润色；只有明显的笔误才顺一下。
+2. 听审人只说了哪里不对，就只改那一处，其余的字保持原样。
+3. 问题只在声音上（音质、不同步，或读音问题而文字没有错）、文字不用改的：`action` 写 "rerender"，`target` 原样抄回。读音问题如果换一个写法能让机器读对（多音字换同义词、缩写展开），可以改字，`action` 写 "retranslate"。
+4. 不加英文里没有的内容；数字、人名、经文出处要和英文一致，保留阿拉伯数字的写法；本篇约定的用词照用：
+{terms}
+5. 配音要跟上原视频：改后的句子不要比原来长很多。
+6. 看不懂听审人要什么的句子，不要猜：`action` 写 "unclear"，`target` 原样抄回，`note` 写你哪里不明白。
+
+输出：写入 {output}，每行一个 JSON，字段恰好是 {{"id","action","target","note"}}，输入里的每个 id 恰好一行、顺序一致；`action` 是 "retranslate"、"rerender"、"unclear" 之一；`note` 用一句话说明改了什么。
+只写这个输出文件；最后只回复一行：done <行数>。
+"""
 
 
 def load_jsonl(path: Path) -> list[dict]:
@@ -514,6 +547,103 @@ def cmd_rewrite(args) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- repair (track review)
+
+def check_repair(before: dict, row: dict) -> str | None:
+    """Why a returned sentence is refused, or None when it may be used."""
+    target, action = str(row.get("target") or "").strip(), row.get("action")
+    if action not in ("retranslate", "rerender", "unclear"):
+        return "unknown action"
+    if not target:
+        return "empty"
+    if action != "retranslate" and target != before["target"]:
+        return "wording changed without saying so"
+    if action == "retranslate" and target == before["target"]:
+        return "says retranslate but the wording is the same"
+    if len(target) > len(before["target"]) * 1.6 + 10:
+        return "much longer than before"
+    return None
+
+
+def cmd_repair(args) -> int:
+    """The reviewer's marked sentences, one model call (a second one for rows that fail the check)."""
+    episode = json.loads(args.episode.read_text(encoding="utf-8"))
+    brief = json.loads(args.brief.read_text(encoding="utf-8")) if args.brief and args.brief.exists() else {}
+    spec = LOCALES[args.locale]
+    request = json.loads(args.issues.read_text(encoding="utf-8"))
+    tag = args.issues.stem.replace("issues-", "")
+    folder = args.run / "repair"
+    folder.mkdir(exist_ok=True)
+    sentences = load_jsonl(args.run / "sentences.jsonl")
+    order = [row["id"] for row in sentences]
+    english = {row["id"]: row["english"] for row in sentences}
+    targets = effective_targets(args.run)
+    spoken = {row["id"]: row.get("spokenText") for row in load_jsonl(args.run / "speech.jsonl")}
+    unknown = sorted(set(request["rows"]) - set(order))
+    if unknown or not request["rows"]:
+        print(json.dumps({"locale": args.locale, "repair": "failed", "why": f"unknown ids {unknown}" if unknown else "no sentences"}, ensure_ascii=False))
+        return 1
+    rows = []
+    for unit in sorted(request["rows"], key=order.index):
+        index, mark = order.index(unit), request["rows"][unit]
+        rows.append({"id": unit, "english": english[unit], "target": targets[unit], "spoken": spoken.get(unit),
+                     "before": targets.get(order[index - 1]) if index else None,
+                     "after": targets.get(order[index + 1]) if index + 1 < len(order) else None,
+                     "tags": [ISSUE_TAGS.get(name, name) for name in mark.get("tags") or []], "note": str(mark.get("note") or "").strip()})
+    by_id = {row["id"]: row for row in rows}
+    report_path = folder / f"repair-{tag}-report.json"
+    accepted, attempts, pending = {}, [], rows
+    for attempt in (1, 2):                                  # one more call for the rows that failed the check, then stop
+        source, out = folder / f"repair-{tag}-input-{attempt}.jsonl", folder / f"repair-{tag}-output-{attempt}.jsonl"
+        source.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in pending), encoding="utf-8")
+        out.unlink(missing_ok=True)
+        result = run_claude(REPAIR_PROMPT.format(label=spec["label"], input=source, output=out, terms=terms_text(brief, args.locale),
+                                                 **episode_facts(episode, args.locale)), timeout=args.timeout)
+        try:
+            returned = load_jsonl(out) if out.exists() else []
+        except ValueError:
+            returned = []
+        refused = {}
+        for row in returned:
+            before = by_id.get(row.get("id"))
+            if before is None or row["id"] in accepted:
+                continue
+            why = check_repair(before, row)
+            if why:
+                refused[row["id"]] = why
+            else:
+                accepted[row["id"]] = {"action": row["action"], "target": str(row["target"]).strip(), "note": str(row.get("note") or "").strip()[:160]}
+        pending = [row for row in pending if row["id"] not in accepted]
+        attempts.append({**result, "attempt": attempt, "refused": refused, "missing": [row["id"] for row in pending if row["id"] not in refused]})
+        if not pending:
+            break
+    report = {"schemaVersion": "sentence-first-review-repair-v1", "locale": args.locale, "round": tag,
+              "decisionId": request.get("decisionId"), "issues": len(rows), "attempts": attempts,
+              "rows": [{"id": unit, "tags": by_id[unit]["tags"], "reviewerNote": by_id[unit]["note"], "before": by_id[unit]["target"],
+                        **accepted.get(unit, {"action": "failed", "target": by_id[unit]["target"], "note": "no usable answer"})} for unit in by_id]}
+    summary = {"locale": args.locale, "issues": len(rows),
+               **{name: [row["id"] for row in report["rows"] if row["action"] == name] for name in ("retranslate", "rerender", "unclear", "failed")}}
+    if summary["failed"]:                                   # nothing is applied from a round that did not answer every sentence
+        write_json(report_path, report)
+        print(json.dumps({**summary, "repair": "failed"}, ensure_ascii=False))
+        return 1
+    if args.apply and summary["retranslate"]:
+        review_path = args.run / "review.json"
+        review = json.loads(review_path.read_text(encoding="utf-8"))
+        revisions = review.setdefault("revisions", {})
+        for row in report["rows"]:
+            if row["action"] != "retranslate":
+                continue
+            earlier = (revisions.get(row["id"]) or {}).get("note")
+            note = f"review fix {tag}: {row['reviewerNote'][:80] or '、'.join(row['tags']) or row['note'][:80]}"
+            revisions[row["id"]] = {"target": row["target"], "note": f"{earlier}; {note}" if earlier else note}
+        write_json(review_path, review)
+        report["applied"] = True
+    write_json(report_path, report)
+    print(json.dumps(summary, ensure_ascii=False))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
@@ -544,12 +674,20 @@ def build_parser() -> argparse.ArgumentParser:
     rewrite.add_argument("--chunk", type=int, default=60)
     rewrite.add_argument("--workers", type=int, default=3)
     rewrite.add_argument("--timeout", type=int, default=3600)
+    repair = commands.add_parser("repair", help="the sentences a track reviewer sent back: a new wording, or render again")
+    repair.add_argument("--run", type=Path, required=True)
+    repair.add_argument("--locale", choices=sorted(LOCALES), required=True)
+    repair.add_argument("--issues", type=Path, required=True, help='{"rows": {"s0012": {"tags": [...], "note": "..."}}}; the file name gives the round')
+    repair.add_argument("--episode", type=Path, required=True)
+    repair.add_argument("--brief", type=Path)
+    repair.add_argument("--apply", action="store_true", help="write the new wordings into review.json")
+    repair.add_argument("--timeout", type=int, default=1800)
     return parser
 
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    return {"brief": cmd_brief, "translate": cmd_translate, "audit": cmd_audit, "rewrite": cmd_rewrite}[args.command](args)
+    return {"brief": cmd_brief, "translate": cmd_translate, "audit": cmd_audit, "rewrite": cmd_rewrite, "repair": cmd_repair}[args.command](args)
 
 
 if __name__ == "__main__":

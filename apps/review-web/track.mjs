@@ -3,7 +3,8 @@
 import { $, h, demo, loadGate, showFatal, setupDecision, createDraft, createClipPlayer, playButton, mediaUrl, fmtClock, fmtDuration, short, LOCALE_NAMES } from "./gate.mjs";
 import { createCoverage, reviewMode } from "./coverage.mjs";
 
-const FLAGS = { revised: ["复核改过", "warn"], condensed: ["精简过", "warn"], lag: ["落后", "warn"], speaker: ["讲员存疑", "warn"], speed: ["加速过", ""], note: ["有备注", ""] };
+const FLAGS = { fixed: ["按你的要求改了", "good"], rerendered: ["重新配音", "warn"], unclear: ["没看懂要求", "bad"], revised: ["复核改过", "warn"], condensed: ["精简过", "warn"], lag: ["落后", "warn"], speaker: ["讲员存疑", "warn"], speed: ["加速过", ""], note: ["有备注", ""] };
+const CHANGED = ["fixed", "rerendered", "unclear"];   // what the last request for changes did to a sentence
 const TAGS = { translation: "译文", reading: "读音", facts: "数字／人名／经文", audio: "音质", sync: "不同步", other: "其他" };
 const state = { marks: {}, clipHeard: new Set(), filter: "all", query: "", follow: true, declared: false, position: 0 };
 let gate, data, rows, decision, draft, coverage, current = null, lastSave = 0;
@@ -18,6 +19,7 @@ function matches(row) {
   if (f === "unheard" && !(row.flags.length && !heard(row))) return false;
   if (f === "issue" && verdictOf(row.id) !== "issue") return false;
   if ((f === "condensed" || f === "lag") && !row.flags.includes(f)) return false;
+  if (f === "changed" && !row.flags.some(flag => CHANGED.includes(flag))) return false;
   const q = state.query.trim().toLowerCase();
   return !q || [row.id, row.target, row.english].some(text => String(text).toLowerCase().includes(q));
 }
@@ -35,6 +37,9 @@ function rowElement(row) {
     h("p", { class: "secondary", lang: "en", text: row.english }),
     row.spoken && row.spoken !== row.target ? h("p", { class: "secondary", lang: data.locale, text: `实际口播：${row.spoken}` }) : null,
     row.note ? h("p", { class: "secondary", text: `备注：${row.note}` }) : null,
+    row.fix ? h("p", { class: "secondary", text: `你上一版写的：${row.fix.asked || row.fix.tags.join("、") || "（没有写说明）"}` }) : null,
+    row.fix && row.fix.before ? h("p", { class: "before", lang: data.locale, text: row.fix.before }) : null,
+    row.fix && row.fix.did ? h("p", { class: "secondary", text: `${row.fix.action === "unclear" ? "没有改" : "这次的处理"}：${row.fix.did}` }) : null,
     h("div", { class: "row-tools" },
       playButton(row.dub, "▶ 配音", "听这一句的配音"),
       playButton(row.source, "▶ 原声", "听这一句的英文原声"),
@@ -144,6 +149,15 @@ async function main() {
       ? `跟视频同步；最大落后 ${sync.maxLagSeconds.toFixed(1)} 秒，超过 8 秒的 ${sync.over8s} 句` : "独立音轨，不跟视频同步" }),
     h("dt", { text: "配音" }), h("dd", { text: data.track.voice || "—" }),
     h("dt", { text: "音轨哈希" }), h("dd", { class: "mono", title: data.track.trackWavSha256, text: short(data.track.trackWavSha256) }));
+  const previous = data.previous;
+  if (previous) {
+    const count = name => previous[name].length;
+    $("previous").hidden = false;
+    $("previous").textContent = `这是第 ${gate.revision} 版。你在上一版标了 ${previous.issues} 句：按你的要求改字 ${count("fixed")} 句，`
+      + `重新配音 ${count("rerendered")} 句（改字的句子和它同一批的句子都会重配）${count("unclear") ? `，没看懂要求、没有改 ${count("unclear")} 句` : ""}。`
+      + "其余句子的文字和声音与上一版相同。点「这次改的」只听这些句子。";
+    $("filters").querySelector('[data-filter="changed"]').hidden = false;
+  }
   $("sync-check").hidden = sync.mode !== "synced";
   $("declared").checked = state.declared;
   $("declared").disabled = gate.state !== "open";
