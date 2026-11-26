@@ -37,6 +37,10 @@
 | L4 线上核对、第二份快照、对齐 | `verify`、`stage2 --with-english`、对齐清单、目录绑定、重新封存、`publish-check` | — | 6 | 8 s ＋ 10 s | release、目录、英文对照、对齐清单和三个索引 | — | 0 | `http-verification.json`、`stage2/` |
 | L4 第 2 次部署 | 带保护的发布器，Dev 站点 | — | 1 | 114 s | 同上 | — | 0 | `stage2/deployment-attempt-v2.json` |
 | L4 回读、发布完整性门禁 | `readback`、`sfa_publish_gate.py --require-alignment` | — | 2 | 1 s ＋ 9 s | 90 项检查，0 项失败 | — | 0 | `publish-gate.json` |
+| 海报概念草稿与校验（报告导出之后补跑） | Codex CLI，文字模型 `gpt-6.1-sol`，ChatGPT 登录 | medium | 1 | 33 s | 三个概念，选了「白马与骑者」，依据是经文原句 | — | 订阅登录 | 海报目录 `round-1/draft`（未复制） |
+| 海报主视觉 | Codex CLI 内置图像生成，ChatGPT 登录 | — | 2 次生成（第一次主体偏低，构图检查自动重画一次） | 65 s | 1024×1536 | — | 订阅登录 | `round-1/a1/art/art-receipt.json`（未复制） |
+| 海报合成 | `delivery.posters.build`（确定性，Swift 渲染） | — | 1 | 4 s | 三种语言各一张 1200×1800 和预览；两个二维码解码核对通过 | — | 0 | `round-1/a1/render`（未复制） |
+| 海报上传前的工具链（空跑，不部署） | 审看标记、`announcement_sidecar`×3、`sfa_publish.py stage-posters`、`publish-check --require-announcements` | — | 6 | 约 2 分钟，主要是取线上现状 | 7 个文件的快照通过校验，Dev 已有的公告原样带上 | — | 0 | 已删除 |
 | 文本质检、音频质检 | not_run | | | | | | | |
 
 ## 错误
@@ -64,12 +68,13 @@
 - L1 到 L3：全部复用上周的产物，没有重做。
 - L4：页面配置、发布预检、资产、声音指纹、线上现状、两份快照、两次部署、线上核对、回读、发布完整性门禁、发布后确认的打开。七件套里做了前五件；研读手册条目和统计目录没有做，页面上写明本轮不交付。
 - 审核步骤：发布授权（按用户在会话里的回答记入）；发布后确认打开但没有人提交。
+- 海报（报告导出之后补跑，只出一张候选）：概念草稿、主视觉、三语合成用真实工具跑通，海报审核步骤已打开；上传前的工具链空跑通过。没有人批准候选，所以没有上传，海报的那一次部署和回读没有实跑。审看标记在空跑里记的是代理看过（`humanApproval=false`），不是人工批准。
 
 ## 遗留状态
 
 - **Dev 站点多了一页** `revelation-jesus-will-return-20261122`（三语），Dev 目录默认打开的页面变成了它；Dev 的版本从 `6045c142` 到 `8fed0a9c` 再到 `a2c17e49`。要撤掉时走已发布页面的替换或撤回流程。
 - mbp14 的工作树下留有：上周五个运行目录的克隆（约 6.7 GB，APFS 克隆不另占空间）、`20261121-jesus-will-return-publish`（约 12 GB：线上现状和两份快照）、`artifacts/weekly-auto/20261121-jesus-will-return`。都可以删除。
-- 演练用的生产记录停在等发布后确认；它不在任何审核服务后面，不会有人收到通知。
+- 演练用的生产记录停在等发布后确认和等海报选择；它不在任何审核服务后面，不会有人收到通知。海报目录 `20261121-jesus-will-return-poster` 留在工作树的 `artifacts/` 下。
 
 ## 外部可见的变化
 
