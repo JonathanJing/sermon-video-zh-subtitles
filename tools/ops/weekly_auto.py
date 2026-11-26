@@ -427,6 +427,13 @@ class Driver:
                             "checkpointReady": any(prefix and sha.startswith(prefix) for prefix in present)})
         return options
 
+    def kickoff_bindings(self, record: dict) -> dict:
+        """What a kickoff decision is about: this media file and the choices the page offered. Only those
+        parts of the configuration are hashed: a decision is not about the rest of the file (2026-11-25: a
+        deployment that changed another setting made a reviewer's submitted approval stale)."""
+        offered = {"defaults": self.config["defaults"], "titleRow": self.title_row(record["sunday"]), "speakers": self.speaker_options()}
+        return {"sourceMediaSha256": record["source"]["sha256"], "defaultsConfigSha256": json_sha(offered)}
+
     def stage_gate_decisions(self, record: dict) -> str:
         source, defaults = record["source"], self.config["defaults"]
         row = self.title_row(record["sunday"])
@@ -471,12 +478,11 @@ class Driver:
                      {"label": "发布授权", "when": "三条音轨都有结论之后", "effort": "约 5 分钟"},
                      {"label": "发布后确认", "when": "发布之后", "effort": "约 10 分钟"}]}
         summary = "整期 · 三语 · 同步 · 正式页" + ("" if row else " · 标题表里没有这一周")
-        self.store.open_gate(record["production"], gate_id="l0.decisions", kind="decisions", title="开工确认", summary=summary,
-                             bindings={"sourceMediaSha256": source["sha256"], "defaultsConfigSha256": sha256_file(self.config_path)},
-                             data=data, assets_root=assets)
+        gate = self.store.open_gate(record["production"], gate_id="l0.decisions", kind="decisions", title="开工确认", summary=summary,
+                                    bindings=self.kickoff_bindings(record), data=data, assets_root=assets)
         record["episode"].update(title=(row or {}).get("titles", {}).get("zh-Hans"),
                                  speaker=next((o["label"] for o in speakers if o["value"] == speaker_id), speaker_id))
-        self.notice(record, "gate.opened", kind="decisions", gate_id="l0.decisions",
+        self.notice(record, "gate.opened", kind="decisions", gate_id="l0.decisions", revision=gate["revision"],     # each version is announced
                     summary="默认值已填好：" + summary + ("，需要你填讲题" if not row else ""))
         return "done"
 
@@ -1129,6 +1135,11 @@ class Driver:
                 if exc.error_class == "stale":
                     done("rejected_stale", message=exc.message)
                     self.notice(record, "decision.rejected_stale", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"stale:{item['decisionId']}")
+                    # the notice says "open the new version": build that version from what the files are now
+                    again = {"decisions": ["gate.decisions", "wait.review"], "english": ["l1.rows", "gate.english", "wait.review"],
+                             "track": [f"gate.track.{decision.get('locale')}", "wait.tracks"]}[kind]
+                    for stage in again + ["l3.verdict", "handoff"]:
+                        record["stages"].pop(stage, None)
                 else:
                     done("failed", message=exc.message)
                     self.notice(record, "decision.failed", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"failed:{item['decisionId']}", reason=exc.message)
@@ -1161,8 +1172,8 @@ class Driver:
 
     def apply_kickoff(self, record: dict, item: dict) -> tuple[str, str]:
         decision, source = item["decision"], record["source"]
-        if decision["bindings"] != {"sourceMediaSha256": source["sha256"], "defaultsConfigSha256": sha256_file(self.config_path)}:
-            raise StageError("stale", "来源文件或默认配置在提交后变了")
+        if decision["bindings"] != self.kickoff_bindings(record):
+            raise StageError("stale", "来源文件或页面给出的默认选项在提交后变了")
         payload = decision["payload"]
         chosen, window = payload["decisions"], payload["window"]
         if chosen.get("form") != "full":

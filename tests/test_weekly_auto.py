@@ -241,20 +241,56 @@ def test_a_rehearsal_goes_all_the_way_and_approves_nothing(driver, tmp_path):
     assert (outcome["status"], outcome["humanApproval"], outcome["deliveryType"]) == ("rehearsal_complete", False, "test (rehearsal)")
 
 
-def test_a_decision_about_a_table_that_changed_is_rejected_and_approves_nothing(driver, tmp_path):
+def test_a_decision_about_a_table_that_changed_approves_nothing_and_the_changed_table_is_shown_again(driver, tmp_path):
     start(driver)
     name = "20261121-sermon"
-    submit(driver, name, "l1.english-review", {"edits": {}}, key="b" * 20)
+    first = submit(driver, name, "l1.english-review", {"edits": {}}, key="b" * 20)
     candidate = tmp_path / "artifacts/sentence-first-agent" / f"{name}-source" / "layer1" / "candidate" / "anchor-manifest.json"
     manifest = json.loads(candidate.read_text())
     manifest["sourceUnits"][0]["english"] = "Changed after the reviewer saw it."
     candidate.write_text(json.dumps(manifest))
     record = driver.advance(name)
-    last = driver.store.last_decision(name, "l1.english-review")
+    last = driver.store.outcome(name, "l1.english-review", first["decisionId"])
     assert last["outcome"] == "rejected_stale" and last["receiptSha256"] is None
-    assert driver.store.gate(name, "l1.english-review")["state"] == "stale" and record["stages"]["wait.review"]["state"] == "waiting"
     assert not (candidate.parent.parent / "english-source.json").exists()
-    assert driver.notifier().messages[-1].title == "[同行] 决定没有生效 · 英文表" and driver.notifier().messages[-1].level == "timeSensitive"
+    # the notice tells the reviewer to open the new version: it is there, built from the table as it is now
+    gate = driver.store.descriptor(name, "l1.english-review", REVIEWER)
+    assert gate["state"] == "open" and gate["revision"] == 2 and record["stages"]["wait.review"]["state"] == "waiting"
+    assert gate["data"]["rows"][0]["english"] == "Changed after the reviewer saw it." and gate["bindings"] != first["decision"]["bindings"]
+    messages = driver.notifier().messages
+    assert [m.title for m in messages[-2:]] == ["[同行] 决定没有生效 · 英文表", "[同行] 待批准 · 英文表"] and messages[-2].level == "timeSensitive"
+
+
+def test_a_kickoff_decision_survives_a_change_elsewhere_in_the_configuration(driver, tmp_path):
+    """2026-11-25: a deployment changed `automation` while a reviewer's kickoff approval was on its way; it was thrown out."""
+    start(driver)
+    name = "20261121-sermon"
+    submit(driver, name, "l0.decisions", kickoff_payload(driver, name), key="a" * 20)
+    config = json.loads(driver.config_path.read_text())
+    config["automation"] = {"through": "tracks", "note": "changed by a deployment"}
+    config["budget"]["weeklyCapUsd"] = 40
+    driver.config_path.write_text(json.dumps(config))
+    driver.config = config
+    driver.advance(name)
+    assert driver.store.gate(name, "l0.decisions")["state"] == "applied"
+    assert (tmp_path / "artifacts/weekly-auto" / name / "kickoff.json").exists()
+
+
+def test_a_kickoff_decision_about_choices_that_changed_is_thrown_out_and_asked_again(driver, tmp_path):
+    start(driver)
+    name = "20261121-sermon"
+    first = submit(driver, name, "l0.decisions", kickoff_payload(driver, name), key="a" * 20)
+    driver.config["defaults"] = {**driver.config["defaults"], "locales": ["zh-Hans"]}       # the page offered three languages
+    record = driver.advance(name)
+    assert driver.store.outcome(name, "l0.decisions", first["decisionId"])["outcome"] == "rejected_stale"
+    assert not (tmp_path / "artifacts/weekly-auto" / name / "kickoff.json").exists()
+    gate = driver.store.descriptor(name, "l0.decisions", REVIEWER)
+    assert gate["state"] == "open" and gate["revision"] == 2 and gate["bindings"] != first["decision"]["bindings"]
+    assert record["stages"]["gate.decisions"]["state"] == "done" and record["stages"]["wait.review"]["state"] == "waiting"
+    assert [m.title for m in driver.notifier().messages[-2:]] == ["[同行] 决定没有生效 · 开工决定", "[同行] 待确认 · 开工决定"]
+    submit(driver, name, "l0.decisions", kickoff_payload(driver, name), key="c" * 20)
+    driver.advance(name)
+    assert driver.store.gate(name, "l0.decisions")["state"] == "applied"
 
 
 def test_kickoff_choices_the_driver_cannot_carry_out_are_reported_not_approved(driver, tmp_path):
@@ -403,11 +439,11 @@ def test_a_notice_no_channel_took_is_sent_again_on_the_next_run(driver):
 
     driver._notifier = Flaky()
     record = start(driver)                       # started + kickoff notice both fail, the English one is delivered
-    assert sorted(record["outbox"]) == ["gate.opened:20261121-sermon:l0.decisions:-", "production.started:20261121-sermon:-:-"]
+    assert sorted(record["outbox"]) == ["gate.opened:20261121-sermon:l0.decisions:1", "production.started:20261121-sermon:-:-"]
     assert record["notices"]["gate.opened:20261121-sermon:l1.english-review:1"]["delivered"] is True
     again = driver.advance("20261121-sermon")
     assert again["outbox"] == {} and len(driver.notifier().messages) == 5
-    kickoff = again["notices"]["gate.opened:20261121-sermon:l0.decisions:-"]
+    kickoff = again["notices"]["gate.opened:20261121-sermon:l0.decisions:1"]
     assert (kickoff["delivered"], kickoff["attempts"]) == (True, 2)
     assert len(driver.advance("20261121-sermon")["notices"]) == 3 and len(driver.notifier().messages) == 5
 

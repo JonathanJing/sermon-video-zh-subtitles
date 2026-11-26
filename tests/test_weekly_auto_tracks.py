@@ -227,16 +227,19 @@ def test_track_approvals_write_the_verdict_and_a_request_without_marked_sentence
     assert "发布还没有自动化" in following["note"]
 
 
-def test_a_track_decision_about_a_track_that_changed_approves_nothing(make, tmp_path):
+def test_a_track_decision_about_a_track_that_changed_approves_nothing_and_the_track_is_shown_again(make, tmp_path):
     driver = make()
     start(driver)
     approve_layer1(driver)
-    approve_track(driver, "zh-Hans")
+    first = approve_track(driver, "zh-Hans")
     (tmp_path / "artifacts/sentence-first-agent" / f"{NAME}-zh" / "track.wav").write_bytes(b"rendered again")
-    driver.advance(NAME)
-    assert driver.store.last_decision(NAME, "l3.review.zh-Hans")["outcome"] == "rejected_stale"
+    record = driver.advance(NAME)
+    assert driver.store.outcome(NAME, "l3.review.zh-Hans", first["decisionId"])["outcome"] == "rejected_stale"
     assert not (tmp_path / "artifacts/weekly-auto" / NAME / "reviews").exists()
-    assert driver.notifier().messages[-1].title == "[同行] 决定没有生效 · 中文音轨"
+    gate = driver.store.descriptor(NAME, "l3.review.zh-Hans", REVIEWER)
+    assert gate["state"] == "open" and gate["revision"] == 2 and record["stages"]["wait.tracks"]["state"] == "waiting"
+    assert gate["bindings"]["trackWavSha256"] == weekly_auto.sha256_file(tmp_path / "artifacts/sentence-first-agent" / f"{NAME}-zh" / "track.wav")
+    assert driver.notifier().titles()[-2:] == ["[同行] 决定没有生效 · 中文音轨", "[同行] 可审 · 中文音轨"]
 
 
 def test_a_track_that_still_lags_after_both_rewrites_stops_and_says_so(make):
@@ -430,7 +433,8 @@ def test_a_request_for_changes_about_another_version_of_the_track_repairs_nothin
     (run / "track.wav").write_bytes(b"another track")
     record = driver.advance(NAME)
     assert "repairs" not in record and driver.run_command.count["repair"] == {}
-    assert driver.store.pending(NAME) == [] and driver.notifier().titles()[-1] == "[同行] 决定没有生效 · 西班牙语音轨"
+    assert driver.store.pending(NAME) == [] and driver.notifier().titles()[-2:] == ["[同行] 决定没有生效 · 西班牙语音轨", "[同行] 可审 · 西班牙语音轨"]
+    assert driver.store.descriptor(NAME, "l3.review.es", REVIEWER)["revision"] == 2, "the track as it is now is put in front of the reviewer"
 
 
 def test_before_a_new_merge_every_sentence_is_the_audio_the_renderer_wrote(make, tmp_path):
