@@ -22,6 +22,7 @@ Test without sending: ``python3 tools/ops/notify.py test-push --no-push``.
 Store keys once (prompts, does not echo):
   security add-generic-password -s org.sermonvideo.production-progress -a bark-iphone -w
   security add-generic-password -s org.sermonvideo.production-progress -a bark-mac -w
+  security add-generic-password -s org.sermonvideo.production-progress -a bark-mbp14 -w
   security add-generic-password -s org.sermonvideo.production-progress -a gmail-user -w
   security add-generic-password -s org.sermonvideo.production-progress -a gmail-app -w
 """
@@ -44,10 +45,11 @@ from typing import Callable
 SERVICE = "org.sermonvideo.production-progress"
 BARK_URL = "https://api.day.app/push"
 GROUP = "sermon-production"
-ACCOUNTS = ("bark-iphone", "bark-mac")
+ACCOUNTS = ("bark-iphone", "bark-mac", "bark-mbp14")   # bark-mac is this Mac; bark-mbp14 is the second Mac (added 2026-11-25)
 MAC_ACCOUNT = "bark-mac"
 LEVELS = ("passive", "active", "timeSensitive", "critical")
 EMAIL_ACCOUNTS = ("gmail-user", "gmail-app", "gmail-to")
+EMAIL_FALLBACK_SERVICE = "org.sermonvideo.drive-upload-watch"
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 465
 
@@ -91,12 +93,17 @@ def post_json(url: str, payload: dict, timeout: float = 15) -> dict:
 
 
 def email_credentials(*, service: str = SERVICE, run: Callable = subprocess.run) -> tuple[str, str, str] | None:
-    """(sender, app password, recipient) from the login keychain, or None when email is not set up."""
-    stored = keychain_keys(EMAIL_ACCOUNTS, service=service, run=run)
-    sender, password = stored.get("gmail-user"), stored.get("gmail-app")
-    if not sender or not password:
-        return None
-    return sender, password, stored.get("gmail-to", sender)
+    """(sender, app password, recipient) from the login keychain, or None when email is not set up.
+
+    The Gmail accounts are looked up under `service` first and then under the Drive watcher's
+    service: it is the same mailbox, and the app password is already stored there on a Mac that
+    runs the watcher. Bark device keys are not shared this way."""
+    for name in dict.fromkeys((service, EMAIL_FALLBACK_SERVICE)):
+        stored = keychain_keys(EMAIL_ACCOUNTS, service=name, run=run)
+        sender, password = stored.get("gmail-user"), stored.get("gmail-app")
+        if sender and password:
+            return sender, password, stored.get("gmail-to", sender)
+    return None
 
 
 def send_email(message: Message, *, credentials: tuple[str, str, str] | None = None,

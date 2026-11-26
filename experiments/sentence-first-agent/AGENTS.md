@@ -10,7 +10,7 @@
 
 1. 产物只写在忽略的 `artifacts/sentence-first-agent/<run>/`。原声切片是讲员原声，不出这个目录，不进 Git。
 2. 可以只读正式生产已有的产物（批准窗口、锚点清单、说话人区分与标签映射、已人工批准的译文），不写入正式生产的目录。
-3. 译文、配音、字幕在用户人工审核前都是机器产物。只有用户亲自听完整轨、审过译文，并要求发布时，才按[发布](#10-发布到正式页面)以 `human_reviewed` 发布；每一次正式部署都要用户在对话里授权。收据先于上线：第 10 步 `assets` 之前审核收据必须已是最终结论；发布包绑定过的收据文件不再改写，改结论就另存新版本并把新哈希记进 `run.md`（2026-10-24 重建版在听审前 84 分钟就以 `human_reviewed` 上线，随后收据被覆盖、原件无副本，绑定链断了）。
+3. 审核页上的提交算正式结论（用户 2026-11-25 决定），目前只对已接到自动流程的三步生效：开工确认、英文表批准和每种语言的整轨听审（[周六自动开工](../../docs/weekly-auto-production.zh.md)）。其余步骤的结论和每一次正式部署的授权仍在对话里给。译文、配音、字幕在用户人工审核前都是机器产物。只有用户亲自听完整轨、审过译文，并要求发布时，才按[发布](#10-发布到正式页面)以 `human_reviewed` 发布；每一次正式部署都要用户在对话里授权。收据先于上线：第 10 步 `assets` 之前审核收据必须已是最终结论；发布包绑定过的收据文件不再改写，改结论就另存新版本并把新哈希记进 `run.md`（2026-10-24 重建版在听审前 84 分钟就以 `human_reviewed` 上线，随后收据被覆盖、原件无副本，绑定链断了）。
 4. 讲员声音只用 Registry 里已授权配音用途、且有本语言能力的 checkpoint；不下载、不换别人的声音。
 5. 同一页面还有别的代理在动（海报、统计目录、网页热修、重建）时，开工前在 `run.md` 登记对方的任务与预计时间，发布前再核对一次。2026-10-24 统计目录同步与官方录音重建并行，目录绑定的音频哈希上线 50 分钟就失效，又丢了约一个半小时的收听上报。
 
@@ -22,6 +22,8 @@
 
 | 脚本 | 在哪跑 | 做什么 |
 |---|---|---|
+| `l1_transcribe.py`、`l1_anchor.py`、`l1_review_rows.py`、`l1_english_source.py` | 本机 | 单讲员证道的 Layer 1：两遍 OpenAI 转写（付费，可续跑）、按词时间拆句并标出两遍不一致的句子、准备英文审核页的数据、在英文表有人工结论后生成英文来源包与收据。由 `tools/ops/weekly_auto.py` 调用，也可以单独运行；2026-11-25 之前这些脚本只存在于各期的运行目录里 |
+| `opus_tasks.py`、`established-terms.json` | 本机 | Claude Code CLI（Opus）的四种有界任务：本篇用词约定、逐句翻译派发、独立审计（`--apply` 把意见写进 `review.json`）、同步改写（先口语化、再精简）。脚本自己检查产出，不合格的重发一次。用词约定必须沿用 `established-terms.json` 里已发布页面用过的写法。2026-11-25 之前翻译和审计的派发脚本只存在于各期的运行目录里，本篇术语写死在提示词中 |
 | `prepare_clip.py` | 本机 | 从锚点清单裁音频：clip.wav、clip.json、words.json、sentences.jsonl、原声切片、run.md 表头 |
 | `split_sentences.py`、`slice_sentences.py` | 本机 | 没有锚点清单时拆句、切原声；`slice_sentences.py` 默认在内存一次切完（`--method wave`，890 句约 0.2 s），不是 PCM16 mono 时才用 `--method ffmpeg` |
 | `assign_speakers.py` | 本机 | 双人：按说话人区分结果给每句定讲员 |
@@ -47,6 +49,7 @@
 | `tools/ops/reseal_snapshot.py` | 本机 | 目录重绑或新增文件后重算 `seal-report.json` 的目录哈希与文件清单，否则 guarded publisher 会以 `Baseline catalog differs`／`incomplete` 拒发 |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
 | `tools/ops/notify.py` | 本机 | Bark 与邮件传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；非 passive 的通知在配置了 `gmail-user`／`gmail-app` 时同时发邮件；不进任何门禁 |
+| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到英文表批准，之后按本文第 2 步继续。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
 | `tools/ops/production_notices.py` | 本机 | 全流程通知清单：每个状态的级别、渠道、链接和措辞；`list` 看全表，`preview`／`send` 生成或发送一条。规则见[人工审核页与通知](../../docs/design/review-gates-and-notifications.zh.md) |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
@@ -510,6 +513,8 @@ Qwen3-TTS 逐句 WAV 自带边缘静音：2026-11-21 第 11 周 zh 实测句首�
 加 `--fail-over-budget-ratio 1.15` 可在渲染前直接拦下明显超长的语言（2026-11-21 韩语到 1.29，剪静音+1.15 加速
 仍不够，只能事后删 80 句）。语速常数已按 2026-11-21 实测校准（去静音后 zh 5.10、ko 6.00、es 14.67 字/秒）。**不要一上来就全局压缩译文**：
 2026-11-21 第一版让 DeepSeek 把 82 句压短，出现「可后靠，我不因失礼。」这类残句，整轮作废重渲。
+
+**2026-11-25 用户决定：落后时的改写只用 Opus，先口语化、不够再精简，不再调用 DeepSeek。** 工具是 `opus_tasks.py rewrite --mode colloquial|condense --select estimate|measured`；自动流程在配音前对估计放不下的句子先口语化一次，合轨后仍不过闸门时依次对实测落后的句子口语化、精简，每次采纳后整条重配。下面 `lag_loop.py` 的 `--check-only` 仍可用来看闸门，它的 DeepSeek 精简不再是默认做法。
 
 **落后的闸门（同步 run 的固定步骤）**：`finish_run.py` 之后、发「可审」之前，必须跑一次落后回环；它按「dubSeconds − sourceSeconds」挑出推后句，交 DeepSeek 精简、重建 speech、清 `tts/` 重配，再跑 `finish_run.py`，最多 `--iterations` 轮：
 

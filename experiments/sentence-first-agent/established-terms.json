@@ -1,0 +1,348 @@
+{
+ "schemaVersion": "sentence-first-established-terms-v1",
+ "note": "Renderings already used on published pages. The episode brief must follow them when the English appears. Seeded 2026-11-25 from the week-11 (2026-11-22) translation conventions; add a row when a page is published with a new standing rendering.",
+ "terms": [
+  {
+   "english": "Aaron Donald",
+   "zh-Hans": "亚伦·唐纳德",
+   "ko": "에런 도널드",
+   "es": "Aaron Donald"
+  },
+  {
+   "english": "Adam and Eve",
+   "zh-Hans": "亚当和夏娃",
+   "ko": "아담과 하와",
+   "es": "Adán y Eva"
+  },
+  {
+   "english": "amillennial / premillennial / postmillennial",
+   "zh-Hans": "无千禧年／前千禧年／后千禧年",
+   "ko": "무천년설／전천년설／후천년설",
+   "es": "amilenialismo / premilenialismo / postmilenialismo"
+  },
+  {
+   "english": "authorial intent",
+   "zh-Hans": "作者的意图",
+   "ko": "저자의 의도",
+   "es": "la intención del autor"
+  },
+  {
+   "english": "broccoli",
+   "zh-Hans": "西兰花",
+   "ko": "브로콜리",
+   "es": "brócoli"
+  },
+  {
+   "english": "Brussels sprouts",
+   "zh-Hans": "抱子甘蓝",
+   "ko": "방울다다기양배추",
+   "es": "coles de Bruselas"
+  },
+  {
+   "english": "Camp Pendleton",
+   "zh-Hans": "彭德尔顿营地",
+   "ko": "캠프 펜들턴",
+   "es": "Camp Pendleton"
+  },
+  {
+   "english": "coach",
+   "zh-Hans": "经济舱",
+   "ko": "이코노미석",
+   "es": "clase turista"
+  },
+  {
+   "english": "Delta",
+   "zh-Hans": "达美航空",
+   "ko": "델타 항공",
+   "es": "Delta"
+  },
+  {
+   "english": "divine warrior",
+   "zh-Hans": "神圣的战士",
+   "ko": "신적 전사",
+   "es": "el guerrero divino"
+  },
+  {
+   "english": "Eden",
+   "zh-Hans": "伊甸",
+   "ko": "에덴",
+   "es": "Edén"
+  },
+  {
+   "english": "elder prayer",
+   "zh-Hans": "长老祷告",
+   "ko": "장로 기도",
+   "es": "la oración de los ancianos"
+  },
+  {
+   "english": "eradicated",
+   "zh-Hans": "消灭",
+   "ko": "박멸",
+   "es": "erradicada"
+  },
+  {
+   "english": "Eric",
+   "zh-Hans": "埃里克",
+   "ko": "에릭",
+   "es": "Eric"
+  },
+  {
+   "english": "everlasting life",
+   "zh-Hans": "永生",
+   "ko": "영생",
+   "es": "la vida eterna"
+  },
+  {
+   "english": "everlasting paradise",
+   "zh-Hans": "永远的乐园",
+   "ko": "영원한 낙원",
+   "es": "el paraíso eterno"
+  },
+  {
+   "english": "Evie",
+   "zh-Hans": "伊薇",
+   "ko": "이비",
+   "es": "Evie"
+  },
+  {
+   "english": "Faithful and True",
+   "zh-Hans": "诚信真实",
+   "ko": "충성과 참됨(충성이라)",
+   "es": "Fiel y Verdadero"
+  },
+  {
+   "english": "first class",
+   "zh-Hans": "头等舱",
+   "ko": "퍼스트클래스",
+   "es": "primera clase"
+  },
+  {
+   "english": "Kay",
+   "zh-Hans": "凯",
+   "ko": "케이",
+   "es": "Kay"
+  },
+  {
+   "english": "King of Kings and Lord of Lords",
+   "zh-Hans": "万王之王、万主之主",
+   "ko": "만왕의 왕 만주의 주",
+   "es": "Rey de reyes y Señor de señores"
+  },
+  {
+   "english": "Mariners Church",
+   "zh-Hans": "水手教会",
+   "ko": "마리너스 교회",
+   "es": "Iglesia Mariners"
+  },
+  {
+   "english": "medallion status",
+   "zh-Hans": "尊爵会籍（Medallion）",
+   "ko": "메달리온 등급",
+   "es": "el estatus Medallion"
+  },
+  {
+   "english": "Miami",
+   "zh-Hans": "迈阿密",
+   "ko": "마이애미",
+   "es": "Miami"
+  },
+  {
+   "english": "murder mystery novels",
+   "zh-Hans": "谋杀悬疑小说",
+   "ko": "추리 소설",
+   "es": "novelas de misterio"
+  },
+  {
+   "english": "NFL",
+   "zh-Hans": "NFL",
+   "ko": "NFL",
+   "es": "NFL"
+  },
+  {
+   "english": "Satan",
+   "zh-Hans": "撒但",
+   "ko": "사탄",
+   "es": "Satanás"
+  },
+  {
+   "english": "shepherding elders",
+   "zh-Hans": "牧养长老",
+   "ko": "양육 장로",
+   "es": "los ancianos pastores"
+  },
+  {
+   "english": "Skid Row",
+   "zh-Hans": "洛杉矶市中心的贫民区（Skid Row）",
+   "ko": "로스앤젤레스 스키드 로",
+   "es": "el barrio Skid Row de Los Ángeles"
+  },
+  {
+   "english": "smallpox",
+   "zh-Hans": "天花",
+   "ko": "천연두",
+   "es": "la viruela"
+  },
+  {
+   "english": "tattoo",
+   "zh-Hans": "纹身",
+   "ko": "문신",
+   "es": "tatuaje"
+  },
+  {
+   "english": "Thanksgiving",
+   "zh-Hans": "感恩节",
+   "ko": "추수감사절",
+   "es": "el Día de Acción de Gracias"
+  },
+  {
+   "english": "the abyss",
+   "zh-Hans": "无底坑",
+   "ko": "무저갱",
+   "es": "el abismo"
+  },
+  {
+   "english": "the beast",
+   "zh-Hans": "兽",
+   "ko": "짐승",
+   "es": "la bestia"
+  },
+  {
+   "english": "the book of life",
+   "zh-Hans": "生命册",
+   "ko": "생명책",
+   "es": "el libro de la vida"
+  },
+  {
+   "english": "the devil",
+   "zh-Hans": "魔鬼",
+   "ko": "마귀",
+   "es": "el diablo"
+  },
+  {
+   "english": "the dragon / ancient serpent",
+   "zh-Hans": "龙／古蛇",
+   "ko": "용／옛 뱀",
+   "es": "el dragón / la serpiente antigua"
+  },
+  {
+   "english": "the Garden of Eden",
+   "zh-Hans": "伊甸园",
+   "ko": "에덴동산",
+   "es": "el huerto del Edén"
+  },
+  {
+   "english": "the great supper of God",
+   "zh-Hans": "神的大筵席",
+   "ko": "하나님의 큰 잔치",
+   "es": "la gran cena de Dios"
+  },
+  {
+   "english": "the great white throne",
+   "zh-Hans": "白色大宝座",
+   "ko": "큰 백보좌",
+   "es": "el gran trono blanco"
+  },
+  {
+   "english": "the iron rod",
+   "zh-Hans": "铁杖",
+   "ko": "철장",
+   "es": "la vara de hierro"
+  },
+  {
+   "english": "the lake of fire",
+   "zh-Hans": "火湖",
+   "ko": "불못",
+   "es": "el lago de fuego"
+  },
+  {
+   "english": "the Lamb",
+   "zh-Hans": "羔羊",
+   "ko": "어린 양",
+   "es": "el Cordero"
+  },
+  {
+   "english": "the magazine",
+   "zh-Hans": "我们的刊物（教会刊物）",
+   "ko": "교회에서 드리는 책자",
+   "es": "la revista de la iglesia"
+  },
+  {
+   "english": "the Messiah",
+   "zh-Hans": "弥赛亚",
+   "ko": "메시아",
+   "es": "el Mesías"
+  },
+  {
+   "english": "the millennial reign of Christ",
+   "zh-Hans": "基督的千禧年统治",
+   "ko": "그리스도의 천년 통치",
+   "es": "el reinado milenial de Cristo"
+  },
+  {
+   "english": "the millennium",
+   "zh-Hans": "千禧年",
+   "ko": "천년왕국",
+   "es": "el milenio"
+  },
+  {
+   "english": "the new heaven and the new earth",
+   "zh-Hans": "新天新地",
+   "ko": "새 하늘과 새 땅",
+   "es": "los cielos nuevos y la tierra nueva"
+  },
+  {
+   "english": "the Rams",
+   "zh-Hans": "公羊队",
+   "ko": "램스",
+   "es": "los Rams"
+  },
+  {
+   "english": "the thousand years",
+   "zh-Hans": "一千年",
+   "ko": "천 년",
+   "es": "los mil años"
+  },
+  {
+   "english": "the wedding feast / marriage supper of the Lamb",
+   "zh-Hans": "羔羊的婚宴",
+   "ko": "어린 양의 혼인 잔치",
+   "es": "las bodas del Cordero"
+  },
+  {
+   "english": "the white horse",
+   "zh-Hans": "白马",
+   "ko": "흰 말",
+   "es": "el caballo blanco"
+  },
+  {
+   "english": "the winepress",
+   "zh-Hans": "酒榨",
+   "ko": "포도주 틀",
+   "es": "el lagar"
+  },
+  {
+   "english": "the Word of God",
+   "zh-Hans": "神之道",
+   "ko": "하나님의 말씀",
+   "es": "la Palabra de Dios"
+  },
+  {
+   "english": "Union Rescue Mission",
+   "zh-Hans": "联合救援会",
+   "ko": "유니언 리스큐 미션",
+   "es": "Union Rescue Mission"
+  },
+  {
+   "english": "veggies",
+   "zh-Hans": "蔬菜",
+   "ko": "채소",
+   "es": "verduras"
+  },
+  {
+   "english": "World Health Organization",
+   "zh-Hans": "世界卫生组织",
+   "ko": "세계보건기구",
+   "es": "la Organización Mundial de la Salud"
+  }
+ ]
+}

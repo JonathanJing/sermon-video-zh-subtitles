@@ -175,6 +175,49 @@ def test_new_file_is_pushed_once_whatever_its_name_and_old_file_stays_silent(tmp
     assert events == ["found", "window_closed"]
 
 
+REAL_ID = "1cXDkbTESTfileid0000000000000000a"
+
+
+def test_each_new_file_gets_one_trigger_file_even_when_no_notice_is_delivered(tmp_path):
+    clock = Clock("2026-10-31T19:40")
+    new = drive_file(REAL_ID, "Saturday_530pm_Live__1080.mp4", "2026-10-31T19:19:10", "2026-10-31T19:29:31", size=970_000_000)
+    watcher, bark, _ = make(tmp_path, clock, lambda: [OLD, new], bark=Bark(fail={"IPHONEKEY": 99, "MACKEY": 99}),
+                            local=lambda m: False, mail=lambda m: False)
+    watcher.poll(watch.window_on(clock.now))
+    path = tmp_path / "triggers" / f"{REAL_ID}.json"
+    trigger = json.loads(path.read_text())
+    assert trigger["schemaVersion"] == "sermon-drive-upload-trigger-v1" and trigger["folderId"] == watch.FOLDER_ID
+    assert trigger["file"]["id"] == REAL_ID and trigger["file"]["sizeBytes"] == 970_000_000 and trigger["file"]["mime"] == "video/mp4"
+    assert (trigger["window"], trigger["sunday"]) == ("2026-10-31", "2026-11-01")
+    assert json.loads((tmp_path / "state.json").read_text())["notified"] == {}, "the notice was not delivered and will be retried"
+    first = path.stat().st_mtime_ns
+    clock.sleep(60)
+    watcher.poll(watch.window_on(clock.now))
+    assert path.stat().st_mtime_ns == first and len(list((tmp_path / "triggers").iterdir())) == 1, "never rewritten"
+    assert not (tmp_path / "triggers" / "old.json").exists(), "a baseline file starts nothing"
+
+
+def test_the_second_mac_gets_the_notice_and_its_absence_is_not_a_warning(tmp_path):
+    assert watch.BARK_ACCOUNTS == ("bark-iphone", "bark-mac", "bark-mbp14")
+    clock = Clock("2026-10-31T18:00")
+    three = {**KEYS, "bark-mbp14": "MBP14KEY"}
+    watcher, bark, _ = make(tmp_path, clock, lambda: [OLD], keys=three)
+    watcher.start(watch.window_on(clock.now), watcher.slot(watch.window_on(clock.now)))
+    assert {payload["device_key"] for _, payload in bark.calls} == {"IPHONEKEY", "MACKEY", "MBP14KEY"}
+    assert bark.calls[0][1]["level"] == "passive"
+    other, bark2, _ = make(tmp_path / "two", Clock("2026-10-31T18:00"), lambda: [OLD])          # only the two expected keys
+    other.start(watch.window_on(clock.now), other.slot(watch.window_on(clock.now)))
+    assert bark2.calls[0][1]["level"] == "passive" and "缺少" not in bark2.calls[0][1]["body"]
+
+
+def test_a_file_id_that_does_not_look_like_one_writes_no_trigger(tmp_path):
+    clock = Clock("2026-10-31T19:40")
+    odd = drive_file("../escape", "x.mp4", "2026-10-31T19:19:10")
+    watcher, _, _ = make(tmp_path, clock, lambda: [OLD, odd])
+    watcher.poll(watch.window_on(clock.now))
+    assert not (tmp_path / "triggers").exists() and not (tmp_path / "escape.json").exists()
+
+
 def test_late_start_reports_a_file_uploaded_before_it_started(tmp_path):
     clock = Clock("2026-10-31T20:30")
     new = drive_file("new", "20261101 BROADCAST MESSAGE.mp4", "2026-10-31T18:47:54")

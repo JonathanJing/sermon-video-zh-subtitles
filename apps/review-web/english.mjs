@@ -1,7 +1,7 @@
 // l1.english-review: approve the English sentence table (Layer 1) before translation starts.
 import { $, h, loadGate, showFatal, setupDecision, createDraft, createClipPlayer, playButton, fmtClock, fmtDuration } from "./gate.mjs";
 
-const FLAGS = { edited: ["机器改过", "warn"], disagree: ["两遍不一致", "warn"], number: ["数字／经文", ""], long: ["超过 12 秒", ""] };
+const FLAGS = { reviewer: ["你上一版改的", "good"], edited: ["机器改过", "warn"], disagree: ["两遍不一致", "warn"], number: ["数字／经文", ""], long: ["超过 12 秒", ""] };
 const state = { replace: {}, merge: new Set(), drop: new Set(), heard: new Set(), filter: "all", query: "", editing: null };
 let gate, rows, decision, draft;
 
@@ -95,17 +95,27 @@ function collect(verdict) {
   else if (merges.some(id => state.drop.has(order[order.indexOf(id) - 1]))) blocked = "有一句要并入的上一句已标为删除";
   else if (kept < 1) blocked = "句表不能全部删除";
   const window = gate.data.summary.window;
+  const looked = new Set([...state.heard, ...replaced, ...merges, ...drops]);
+  const affirms = Array.from(document.querySelectorAll("#affirms [data-affirm]"), item => item.dataset.affirm);
+  // Approving is one action: it confirms every item listed on the page. Sentences the reviewer
+  // did not hear or edit are approved by default, and the decision says how many those are.
+  const scope = { mode: "default_approve_unreviewed", units: rows.length, heardUnits: state.heard.size,
+    editedUnits: replaced.length + merges.length + drops.length, lookedAtUnits: looked.size,
+    flaggedUnits: flagged.length, flaggedUnheard: unheard };
   return {
     blocked,
     hasIssues: replaced.length + merges.length + drops.length > 0,
+    checks: Object.fromEntries(affirms.map(name => [name, verdict === "approved"])),
     payload: { edits: { replace: Object.fromEntries(replaced.map(id => [id, state.replace[id]])), mergeWithPrevious: merges, drop: drops },
-      heardUnitIds: order.filter(id => state.heard.has(id)) },
+      heardUnitIds: order.filter(id => state.heard.has(id)), approval: scope },
     client: { heardUnits: state.heard.size, flaggedUnits: flagged.length, flaggedUnheard: unheard },
     summary: [
       verdict === "approved" ? `批准英文表：改完后共 ${kept} 句` : "不批准，退回修改",
       `你的修改：改字 ${replaced.length} 句，并入上一句 ${merges.length} 句，删除 ${drops.length} 句`,
-      `原声已听 ${state.heard.size} 句；有标记的 ${flagged.length} 句里还有 ${unheard} 句没听`,
-      `窗口：${fmtClock(window.start)}–${fmtClock(window.end)}`,
+      verdict === "approved"
+        ? `你听过或改过 ${looked.size} 句；其余 ${rows.length - looked.size} 句没有逐句看，按默认通过`
+        : `原声已听 ${state.heard.size} 句；有标记的 ${flagged.length} 句里还有 ${unheard} 句没听`,
+      verdict === "approved" ? "批准即确认：来源正确、文字完整、声音和文字对得上、断句合理、窗口正确" : `窗口：${fmtClock(window.start)}–${fmtClock(window.end)}`,
       verdict === "approved" ? "批准后开始三种语言的翻译" : "退回后不会开始翻译",
     ],
   };

@@ -16,6 +16,7 @@
 
 - 启动器：`tools/ops/run_with_openai_environment.py --environment prod -- <command>`；凭据文件 `.env.openai`（权限 600）。正式内容用 `prod`，实验和测试用 `dev`，两套都在同一文件里。
 - 模型可用性：2026-11-14 在 prod 项目用 models 列表核对，`whisper-1`、`gpt-4o-transcribe`、`gpt-4o-mini-transcribe` 均可见；本轮没有发起付费转写。
+- 2026-11-25 起这些脚本在仓库里：`experiments/sentence-first-agent/l1_transcribe.py`、`l1_anchor.py`、`l1_review_rows.py`、`l1_english_source.py`，本期内容通过参数和提示词文件传入；用第 11 周的转写和修订重跑 `l1_anchor.py`，得到的锚点清单与当时逐字节一致。下面是 2026-11-15 冻结时各期运行目录里的版本。
 - 脚本（`20261108-sermon-source/layer1/`）：
   - `transcribe_openai.py` — `76cf462d…`，whisper-1 词级时间；
   - `transcribe_second_pass.py` — `d7abd45e…`，gpt-4o-transcribe 分块文本，检查每块尾部是否落在词界；
@@ -33,6 +34,8 @@
 - 审计：主代理先把 `translations.jsonl` 复制成 `audit/translations.audit.jsonl` 并记哈希，审计子代理只读该副本、只写 `audit/audit-<locale>.jsonl`；改哪些句子由主代理决定。
 - 冒烟（2026-11-14）：两句英文，输出两行合法 JSON，`done 2`，9.8 s，`claude-opus-5-5`，费用 $0.1485（含 15.7k cache creation）。整期 460 句的三语翻译本轮没有执行。
 - 派发脚本里的 week-9 run 名是本期占位，今晚改成 `20261115-*`；提示词、模型和参数不变。
+
+- 2026-11-25 起派发脚本在仓库里：`experiments/sentence-first-agent/opus_tasks.py`（`brief`／`translate`／`audit`／`rewrite`），CLI 调用方式不变。同步改写也用同一个栈（用户决定：先 Opus 口语化，不够再 Opus 精简，不用 DeepSeek）。生产机 mbp16 上的 CLI 版本是 2.1.292，与上面冻结的 2.1.325 不同。
 
 ## L3 Spark TTS
 

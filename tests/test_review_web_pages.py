@@ -37,13 +37,19 @@ def test_page_obeys_the_strict_csp(page):
 def test_gate_page_has_the_decision_bar_and_its_checks(kind):
     html = (WEB / f"{kind}.html").read_text(encoding="utf-8")
     assert f'<body data-kind="{kind}">' in html
-    for element in ("label-strip", "bindings", "checks", "note", "result", "actions", "hint", "approve",
+    for element in ("label-strip", "bindings", "note", "result", "actions", "hint", "approve",
                     "request-changes", "confirm-dialog", "confirm-summary", "confirm-send", "confirm-cancel", "submit-error"):
         assert f'id="{element}"' in html, element
-    checks = re.findall(r'data-check="([A-Za-z]+)"', html)
-    assert checks and len(checks) == len(set(checks))
+    names = re.findall(r'data-(?:check|affirm)="([A-Za-z]+)"', html)
+    assert names and len(names) == len(set(names))
+    if kind == "english":   # approving the English table is one action; nothing has to be ticked first
+        assert 'type="checkbox"' not in html and len(re.findall(r'data-affirm="', html)) == 5
+        assert "按默认通过" in html
+    else:
+        assert f'id="checks"' in html and re.findall(r'data-check="', html)
     module = (WEB / f"{kind}.mjs").read_text(encoding="utf-8")
     assert f'loadGate("{kind}")' in module and "setupDecision(gate" in module
+    assert "gate.labels.rehearsal" in (WEB / "gate.mjs").read_text(encoding="utf-8"), "a rehearsal is labelled on every page"
 
 
 def test_modules_never_build_html_from_strings():

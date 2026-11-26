@@ -12,12 +12,15 @@ exits. A file is new when its ID has not been seen; the date prefix in its name
 is only a label (the 2026-10-24 upload was named Saturday_400pm_Live__1080.mp4).
 Files whose earliest Drive timestamp falls before this week's Sunday 00:00 are
 recorded silently as the baseline. Pushes go to every Bark key stored in the
-login keychain (service org.sermonvideo.drive-upload-watch, accounts bark-iphone
-and bark-mac); a macOS notification is shown when the Mac's Bark push did not
+login keychain (service org.sermonvideo.drive-upload-watch, accounts bark-iphone,
+bark-mac and optionally bark-mbp14); a macOS notification is shown when the Mac's Bark push did not
 arrive. Every non-passive notice also goes out by Gmail SMTP as an independent
 backup channel (same keychain service, accounts gmail-user and gmail-app, plus
 an optional gmail-to recipient; the sender is the default recipient).
-Read-only: no download, no Google sign-in, no production stage.
+Read-only: no download, no Google sign-in, no production stage. Each new file also gets
+one trigger file, triggers/<file id>.json next to state.json, written whether or not a notice
+was delivered. Nothing here reads it: tools/ops/weekly_auto.py starts production from it when
+its own LaunchAgent is installed (docs/weekly-auto-production.zh.md).
 Standard library only, Python 3.9+, so `install` can run a copy with
 /usr/bin/python3 independent of this checkout's branch. See
 docs/codex-local-production-runbook.zh.md (Broadcast Message 网盘上传检查).
@@ -56,10 +59,13 @@ JITTER_SECONDS = 5
 ERROR_THRESHOLD = 3  # consecutive failed reads before one error push
 STATE_VERSION = 1
 KEEP_WINDOWS_DAYS = 120
+TRIGGER_SCHEMA = "sermon-drive-upload-trigger-v1"
+FILE_ID = re.compile(r"[A-Za-z0-9_-]{10,}")
 
 LABEL = "org.sermonvideo.drive-upload-watch"
 KEYCHAIN_SERVICE = LABEL
-BARK_ACCOUNTS = ("bark-iphone", "bark-mac")
+BARK_ACCOUNTS = ("bark-iphone", "bark-mac", "bark-mbp14")
+EXPECTED_ACCOUNTS = ("bark-iphone", "bark-mac")   # the start notice warns only when one of these is missing
 MAC_ACCOUNT = "bark-mac"
 BARK_URL = "https://api.day.app/push"
 BARK_GROUP = "sermon-upload"
@@ -353,6 +359,7 @@ class Watcher:
         self.clock, self.sleep = clock, sleep
         self.poll_seconds, self.jitter_seconds = poll_seconds, jitter_seconds
         self.observations = state_path.with_name("observations.ndjson")
+        self.triggers = state_path.with_name("triggers")
         self.state = load_state(state_path)
         self.failures = 0
         self.last_names: list = []
@@ -397,7 +404,7 @@ class Watcher:
         if slot["startSent"]:
             return
         accounts = ", ".join(a.replace("bark-", "") for a in self.notifier.keys) or "无"
-        missing = [a for a in BARK_ACCOUNTS if a not in self.notifier.keys]
+        missing = [a for a in EXPECTED_ACCOUNTS if a not in self.notifier.keys]
         body = (f"{WINDOW_START:%H:%M}–{WINDOW_END:%H:%M} 每 {self.poll_seconds:.0f}s 查一次 Broadcast Message Files"
                 f" · Bark: {accounts}")
         if missing:
@@ -436,6 +443,7 @@ class Watcher:
                 self.state["baseline"][item.id] = {**item.record(), "recordedPT": _iso(now)}
         slot["baselineDone"] = True
         for item in new:
+            self.write_trigger(item, window, now)
             results = self.notifier.send(self.found_message(item, window))
             if not delivered(results):
                 log(f"no channel delivered the notice for {item.name}; retrying next poll")
@@ -447,6 +455,28 @@ class Watcher:
             log(f"new file {item.name} ({size_text(item.size)}) notified: {results}")
         self.save()
         return new
+
+    def write_trigger(self, item: DriveFile, window: Window, now: dt.datetime) -> bool:
+        """One trigger file per new file ID; an existing one is never rewritten."""
+        if not FILE_ID.fullmatch(item.id):
+            log(f"no trigger for {item.name}: unexpected file id")
+            return False
+        path = self.triggers / f"{item.id}.json"
+        if path.exists():
+            return False
+        record = {"schemaVersion": TRIGGER_SCHEMA, "folderId": FOLDER_ID, "folderUrl": FOLDER_URL,
+                  "file": item.record(), "window": window.day.isoformat(),
+                  "sunday": window.sunday.isoformat(), "firstSeenPT": _iso(now)}
+        try:
+            self.triggers.mkdir(parents=True, exist_ok=True)
+            temporary = path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            os.replace(temporary, path)
+        except OSError as exc:  # a full disk must not stop the notice
+            log(f"trigger for {item.name} not written: {type(exc).__name__}")
+            return False
+        log(f"trigger written for {item.name}")
+        return True
 
     def found_message(self, item: DriveFile, window: Window) -> Message:
         stamp = f"{item.earliest:%H:%M} PT" if item.earliest else "时间未知"

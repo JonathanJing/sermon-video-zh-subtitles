@@ -16,8 +16,10 @@ function render(index) {
   const open = index.gates.filter(gate => gate.state === "open");
   const strip = $("label-strip");
   strip.dataset.state = open.length ? "open" : "";
-  strip.replaceChildren(h("strong", { text: demo ? "演示数据" : (open.length ? `有 ${open.length} 步在等你` : "现在没有等你的步骤") }),
-    open.length ? open.map(gate => gate.title).join("、") : "机器在继续做，或这一期已经做完。");
+  const label = `${index.rehearsal ? "演练 · " : ""}${demo ? "演示数据" : (open.length ? `有 ${open.length} 步在等你` : "现在没有等你的步骤")}`;
+  strip.replaceChildren(h("strong", { text: label }),
+    (open.length ? open.map(gate => gate.title).join("、") : "机器在继续做，或这一期已经做完。")
+      + (index.rehearsal ? " 这是演练，不产生任何人工批准。" : ""));
 
   const worker = index.worker || {};
   const stale = !demo && worker.lastSeenAt && Date.now() - new Date(worker.lastSeenAt).getTime() > 120000;
