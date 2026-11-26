@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261126-weekly-auto-publish-dev",
+  "runs": [
+    {
+      "label": "20261121-jesus-will-return",
+      "source": "~/dev/sermon-video-zh-subtitles/.claude/worktrees/weekly-auto/artifacts/weekly-auto/20261121-jesus-will-return",
+      "skipped": {
+        "(none)": 1,
+        ".lock": 1,
+        ".ndjson": 1,
+        ".json": 12
+      }
+    },
+    {
+      "label": "20261121-jesus-will-return-publish",
+      "source": "~/dev/sermon-video-zh-subtitles/.claude/worktrees/weekly-auto/artifacts/sentence-first-agent/20261121-jesus-will-return-publish",
+      "skipped": {
+        ".json": 1803,
+        ".mp3": 585,
+        ".js": 28,
+        ".html": 315,
+        "(none)": 3,
+        ".mjs": 129,
+        ".png": 72,
+        ".svg": 9,
+        ".txt": 3,
+        ".mp4": 69,
+        ".srt": 6,
+        ".pdf": 12,
+        ".wav": 39,
+        ".jpg": 3,
+        ".css": 12,
+        ".lock": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261121-jesus-will-return",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 4093,
+      "truncated": false,
+      "sha256": "72f2c3ae18d8eac76e8aaca0f20b3f98476cccb6f192d3daa98d8132266ee084",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1545,
+      "truncated": false,
+      "sha256": "4dbd9a2ac20dc93317bb64293c789c18d98e428c39051f5411f66187a81b3482",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "alignment/index-es.receipt.json",
+      "kind": "whole",
+      "bytes": 323,
+      "truncated": false,
+      "sha256": "66036cad1e01faba5471a824b36f65d9a9200357c943c706e3012c297b9b0a3d",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "alignment/index-ko.receipt.json",
+      "kind": "whole",
+      "bytes": 323,
+      "truncated": false,
+      "sha256": "0bd0c00b28de6adedd2d2fc95d518524eaac0ca51ea26a57cb25cdca798c89ef",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "alignment/index-zh-Hans.receipt.json",
+      "kind": "whole",
+      "bytes": 328,
+      "truncated": false,
+      "sha256": "0a748a2e6d7d8d03e9ec2dc889642bc464f13fa4d596f70353d7c60eacd77800",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "alignment/source-landmarks.receipt.json",
+      "kind": "whole",
+      "bytes": 337,
+      "truncated": false,
+      "sha256": "4c1fc5f2d6881a6bf496890c54ae12c16ad4477c213566a5355886e1027f13c4",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 369863,
+      "truncated": false,
+      "sha256": "b43a73fc124bdf06c7d8d6058148f24c7a338323e452ec2206caaeace30cc4e9",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "http-verification.json",
+      "kind": "whole",
+      "bytes": 2852,
+      "truncated": false,
+      "sha256": "ce87a8817650456253b17deef2b78429f51e004bcd5157f9e3f5afa9a1c521e4",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1433,
+      "truncated": false,
+      "sha256": "2be8f2f909b17fd2221c6be9d1a3c2860bfe56d7c1e1bb21cfd67142084c05d7",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "publish-gate.json",
+      "kind": "whole",
+      "bytes": 14138,
+      "truncated": false,
+      "sha256": "b8c9a3a80014bc3a3a71233ecbf440dc1592d8c58f670b9f0ad5584b6746e136",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage1/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 369863,
+      "truncated": false,
+      "sha256": "b43a73fc124bdf06c7d8d6058148f24c7a338323e452ec2206caaeace30cc4e9",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage1/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1507,
+      "truncated": false,
+      "sha256": "05ccbeb9c0d3216243c803e00b5b38de42129f5155e70d867171148d8b002cd6",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage1/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage1/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 369863,
+      "truncated": false,
+      "sha256": "b43a73fc124bdf06c7d8d6058148f24c7a338323e452ec2206caaeace30cc4e9",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage2/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1507,
+      "truncated": false,
+      "sha256": "5236808feb4a19413d212443f73a2d2b1ae71a90e33cba86481f3facd5d67955",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage2/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-publish",
+      "path": "stage2/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

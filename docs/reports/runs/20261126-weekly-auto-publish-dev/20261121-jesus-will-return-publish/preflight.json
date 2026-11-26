@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "pageId": "revelation-jesus-will-return-20261122",
+  "environment": "dev",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "englishSourceJsonSha256": "fb9de13bffc566681659f2d64a209a4da702545ac7aed73cce9f7913ac6984ae",
+  "sourceMediaSha256": "4976c8759fa3d5f21c30c4e9246b982f5e336dee9dd7fbe14a880cbf2aba4e37",
+  "verdict": {
+    "reviewedAt": "2026-11-21T22:17:00-08:00",
+    "reviewer": "Jony (chat)"
+  },
+  "decisions": {
+    "zh-Hans": {
+      "form": "full",
+      "sync": true,
+      "publish": true,
+      "title": "主日证道 · Jesus will return（启 19:11–21:8）· Eric Geiger · 周六 4:00pm 场"
+    },
+    "ko": {
+      "form": "full",
+      "sync": true,
+      "publish": true,
+      "title": "主日证道 · Jesus will return（启 19:11–21:8）· Eric Geiger · 周六 4:00pm 场"
+    },
+    "es": {
+      "form": "full",
+      "sync": true,
+      "publish": true,
+      "title": "主日证道 · Jesus will return（启 19:11–21:8）· Eric Geiger · 周六 4:00pm 场"
+    }
+  },
+  "titleCheck": {
+    "mode": "approved_exception",
+    "series": "revelation-comfort-and-hope",
+    "week": 11,
+    "expected": {
+      "zh-Hans": "耶稣必再来",
+      "ko": "예수님은 다시 오실 것입니다",
+      "es": "Jesús volverá"
+    },
+    "actual": {
+      "zh-Hans": "耶稣必再来",
+      "ko": "예수님은 다시 오실 것입니다",
+      "es": "Jesús volverá"
+    },
+    "skipped": null
+  },
+  "warnings": []
+}

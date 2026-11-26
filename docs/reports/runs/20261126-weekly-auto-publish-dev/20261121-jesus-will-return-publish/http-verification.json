@@ -1,0 +1,89 @@
+{
+  "checks": [
+    {
+      "pass": true,
+      "path": "/pages/revelation-jesus-will-return-20261122/zh-Hans/index.html",
+      "sha256": "a42f5c5c4effca83d093180a4cef10e7b895fe906fca99bf4269855642653139",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/content/revelation-jesus-will-return-20261122/zh-Hans.json",
+      "sha256": "49f00f6f9886b3686fdf597f4b39b025b34e436d8d7d3decf53076bc7c3928b0",
+      "status": 200
+    },
+    {
+      "contentRange": "bytes 0-1023/42883724",
+      "contentType": "audio/mpeg",
+      "pass": true,
+      "path": "/media/revelation-jesus-will-return-20261122/zh-Hans.mp3",
+      "rangeStatus": 206,
+      "sha256": "f3c83534e1b2af86e497b23c8fb54de2c23f5db7d95c18452b9222dcdc440d6e",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/captions/revelation-jesus-will-return-20261122/zh-Hans.json",
+      "sha256": "c10d7f418f77ddb4ececc5764ebfd58704be88a1d19019836835909eb0dad7b8",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/pages/revelation-jesus-will-return-20261122/ko/index.html",
+      "sha256": "62cc87b65eb854fb58c561d181d6957c6d7a35ba2c9ebe6eb4821994af4aecde",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/content/revelation-jesus-will-return-20261122/ko.json",
+      "sha256": "044c2cd40b081ba26c6de5631a4eaea0e2b30ad9d0765d76e62142c460ca6ca5",
+      "status": 200
+    },
+    {
+      "contentRange": "bytes 0-1023/42883724",
+      "contentType": "audio/mpeg",
+      "pass": true,
+      "path": "/media/revelation-jesus-will-return-20261122/ko.mp3",
+      "rangeStatus": 206,
+      "sha256": "a484924764b48957ccc0d41113dc1991c625a1b0dee949b0769252fc30d534fd",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/captions/revelation-jesus-will-return-20261122/ko.json",
+      "sha256": "b00debf0468fa241b5f04b885c77a69e2bde76a5084d0ded2f445d632d6e11f1",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/pages/revelation-jesus-will-return-20261122/es/index.html",
+      "sha256": "af40d5ba101a920e6c35868bd1699078cc16c94deedf3d1be9828d2c7206aa8d",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/content/revelation-jesus-will-return-20261122/es.json",
+      "sha256": "0e320305e729aeecc704a5812f6a6f03a34ad744d2df4d9dfeb0c1aa16410a99",
+      "status": 200
+    },
+    {
+      "contentRange": "bytes 0-1023/42883724",
+      "contentType": "audio/mpeg",
+      "pass": true,
+      "path": "/media/revelation-jesus-will-return-20261122/es.mp3",
+      "rangeStatus": 206,
+      "sha256": "6602f1edabfe6a7610956b558812a6a6ff6d82de7630cee4be7869476ebcbdb0",
+      "status": 200
+    },
+    {
+      "pass": true,
+      "path": "/captions/revelation-jesus-will-return-20261122/es.json",
+      "sha256": "a1e728333a188290ca6f4ff9bacec638aa3f3785cc30df2a4dd9f2e29113bf54",
+      "status": 200
+    }
+  ],
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "pageId": "revelation-jesus-will-return-20261122",
+  "schemaVersion": "sentence-first-episode-http-verification-v1",
+  "status": "pass"
+}
