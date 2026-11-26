@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "weekly-sermon-auto-config-v1",
+  "route": "sentence-first-agent",
+  "deliveryType": "four_layer_release",
+  "source": {
+    "kind": "google_drive_public_folder",
+    "folderId": "1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF",
+    "folderUrl": "https://drive.google.com/drive/folders/1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF",
+    "description": "Broadcast Message Files: the edited message file that is played on Sunday",
+    "attribution": "English source: Mariners Church weekend message. Personal project, not affiliated with Mariners Church.",
+    "acceptMimePrefixes": ["video/"],
+    "minBytes": 100000000,
+    "window": "whole_media"
+  },
+  "defaults": {
+    "form": "full",
+    "locales": ["zh-Hans", "ko", "es"],
+    "sync": true,
+    "publish": "production_page",
+    "speakerId": "eric_geiger",
+    "titleTable": "docs/series-sermon-titles.zh.md"
+  },
+  "transcription": {
+    "environment": "prod",
+    "timingModel": "whisper-1",
+    "textModel": "gpt-4o-transcribe",
+    "chunkSeconds": 240,
+    "textMaxAttempts": 3,
+    "uploadMaxBytes": 24000000,
+    "uploadBitratesKbps": [64, 48, 40, 32],
+    "basePrompt": "Sermon from Mariners Church weekend service. Names and terms: Jesus, Mariners Church, Irvine, Tustin, North OC, Eric Geiger, Steve Bang Lee, John Thomas.",
+    "estimatedUsdPerAudioMinute": {
+      "whisper-1": 0.006,
+      "gpt-4o-transcribe": 0.006
+    },
+    "estimateNote": "Reservation estimate only, not a bill. Reconcile the real spend with tools/ops/import_openai_costs.py."
+  },
+  "budget": {
+    "provider": "openai",
+    "scope": "layer1_transcription",
+    "weeklyCapUsd": 50
+  },
+  "review": {
+    "bind": "127.0.0.1",
+    "port": 8444
+  },
+  "authorizations": {
+    "sourceAutoStart": {
+      "grantedBy": "user (chat)",
+      "grantedAt": "2026-11-25",
+      "statement": "自动下载的来源授权，默认是周日的正式播放版，自动开始生产",
+      "scope": "Download a new file in source.folderId and start Layer 1 without asking. Covers this folder only."
+    },
+    "paidTranscription": {
+      "grantedBy": "user (chat)",
+      "grantedAt": "2026-11-25",
+      "statement": "付费转写每周openai 50的上限",
+      "scope": "Unattended OpenAI transcription for Layer 1, at most budget.weeklyCapUsd per ISO week. No other paid stage."
+    },
+    "pageDecisions": {
+      "grantedBy": "user (chat)",
+      "grantedAt": "2026-11-25",
+      "statement": "页面上的提交算正式结论",
+      "scope": "A decision submitted on the tailnet review page is the formal human conclusion for the gate it names, bound to the hashes the page showed."
+    }
+  }
+}

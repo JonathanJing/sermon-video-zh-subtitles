@@ -3,7 +3,7 @@
 
     python3 tools/ops/production_notices.py list [--json]        # the whole table
     python3 tools/ops/production_notices.py preview gate.opened --kind english \\
-        --url https://<mac>.<tailnet>.ts.net:8791/english.html --field units=457 --field flagged=41 --field minutes=15
+        --url https://<mac>.<tailnet>.ts.net:8444/english.html --field units=457 --field flagged=41 --field minutes=15
     python3 tools/ops/production_notices.py send <event> ... [--no-push]
 
 One event has one level and one wording. Bark carries the level; email follows the Drive
@@ -39,6 +39,7 @@ import notify  # noqa: E402
 
 TZ = ZoneInfo("America/Los_Angeles")
 PREFIX = "[同行]"
+REHEARSAL_PREFIX = "[同行·演练]"
 QUIET_START = dt.time(22, 30)   # no reminders from here ...
 QUIET_END = dt.time(7, 30)      # ... until here; a reminder that falls inside waits for the morning
 LOCALE_NAMES = {"zh-Hans": "中文", "ko": "韩语", "es": "西班牙语", "en": "英文"}
@@ -134,8 +135,10 @@ class _Fields(dict):
 
 
 def build(event: str, *, production: str, kind: str | None = None, locale: str | None = None,
-          url: str | None = None, **fields) -> dict:
-    """One notice, ready for notify.Message: key, level, email, title, body, url."""
+          url: str | None = None, rehearsal: bool = False, **fields) -> dict:
+    """One notice, ready for notify.Message: key, level, email, title, body, url.
+
+    A rehearsal says so in its title, so a test run is never read as the real thing."""
     if event not in EVENTS:
         raise KeyError(f"unknown event {event!r}")
     sender, level, link, title, body = EVENTS[event]
@@ -159,7 +162,7 @@ def build(event: str, *, production: str, kind: str | None = None, locale: str |
     link_url = safe_url(url)
     key = ":".join(str(part) for part in (event, production, stage or "-", fields.get("revision", "-")) if part)
     return {"event": event, "sender": sender, "key": key, "level": level, "email": level in EMAIL_LEVELS,
-            "title": f"{PREFIX} {title.format_map(values)}", "body": body.format_map(values),
+            "title": f"{REHEARSAL_PREFIX if rehearsal else PREFIX} {title.format_map(values)}", "body": body.format_map(values),
             "url": link_url if link != "none" else None, "stage": stage,
             "linkMissing": link in ("gate", "drive") and link_url is None}
 
