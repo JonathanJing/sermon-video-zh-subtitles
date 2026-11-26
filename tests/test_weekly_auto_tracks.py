@@ -224,7 +224,7 @@ def test_track_approvals_write_the_verdict_and_a_request_without_marked_sentence
     assert verdict["locales"]["zh-Hans"]["trackWavSha256"] == zh["trackWavSha256"] and verdict["reviewedAt"].endswith("+00:00")
     following = json.loads((tmp_path / "artifacts/weekly-auto" / NAME / "next-step.json").read_text())
     assert following["through"] == "tracks" and following["runs"]["ko"].endswith(f"{NAME}-ko") and following["verdict"].endswith("human-review-verdict.json")
-    assert "发布还没有自动化" in following["note"]
+    assert "发布没有交给自动流程" in following["note"]
 
 
 def test_a_track_decision_about_a_track_that_changed_approves_nothing_and_the_track_is_shown_again(make, tmp_path):
