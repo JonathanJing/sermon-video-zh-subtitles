@@ -80,6 +80,11 @@ def build(args) -> dict:
     write(decision_copy, record)
     edits = decision["payload"].get("edits") or {}
     edit_counts = (len(edits.get("replace") or {}), len(edits.get("mergeWithPrevious") or []), len(edits.get("drop") or []))
+    heard = len(decision["payload"].get("heardUnitIds") or [])
+    scope = decision["payload"].get("approval") or {}
+    candidate_units = int(scope.get("units") or len(anchors["sourceUnits"]))
+    looked = int(scope.get("lookedAtUnits") or heard)
+    by_default = scope.get("mode") == "default_approve_unreviewed"
 
     window = {"schemaVersion": "sermon-source-window-approval-v1", "sourceUrl": anchors["input"]["sourceUrl"],
               "mediaSha256": media_sha, "start": 0.0, "end": duration,
@@ -96,13 +101,19 @@ def build(args) -> dict:
                "reviewedSourceUnitIds": unit_ids,
                "anchorManifestJsonSha256": json_sha(anchors), "alignedSegmentsSha256": sha(aligned),
                "reviewFile": rel(args.review_csv), "reviewFileSha256": sha(args.review_csv),
+               "reviewScope": {"mode": scope.get("mode") or "page_checks", "candidateUnits": candidate_units, "heardUnits": heard,
+                               "editedUnits": sum(edit_counts), "lookedAtUnits": looked,
+                               "approvedByDefaultUnits": max(0, candidate_units - looked) if by_default else 0,
+                               "flaggedUnits": scope.get("flaggedUnits"), "flaggedUnheard": scope.get("flaggedUnheard")},
                "decision": {"decisionId": record["decisionId"], "gateId": decision["gateId"], "revision": decision["revision"],
                             "candidateAnchorManifestJsonSha256": decision["bindings"].get("anchorManifestJsonSha256"),
                             "file": rel(decision_copy), "sha256": sha(decision_copy),
                             "authority": args.authority},
                "note": (f"英文表由审核者在审核页提交结论（{len(unit_ids)} 句；改字 {edit_counts[0]} 句、并入上一句 {edit_counts[1]} 句、"
-                        f"删除 {edit_counts[2]} 句；听过原声 {len(decision['payload'].get('heardUnitIds') or [])} 句）。"
-                        "被批准的是应用这些修改之后的句表。转写为 OpenAI whisper-1 词级时间与段文本，"
+                        f"删除 {edit_counts[2]} 句；听过原声 {heard} 句）。"
+                        + (f"审核者没有逐句审完：听过或改过 {looked} 句，其余 {max(0, candidate_units - looked)} 句按默认批准"
+                           "（用户 2026-11-25 决定：批准不要求全部审完，剩下的默认批准）。" if by_default else "")
+                        + "被批准的是应用这些修改之后的句表。转写为 OpenAI whisper-1 词级时间与段文本，"
                         "gpt-4o-transcribe 第二遍作独立交叉核对；单讲员，未跑说话人区分；不是 MFA 对齐。"
                         + (f" 审核者备注：{decision['note']}" if decision.get("note") else "")
                         + (" 这是演练，不是人工审核，不能用于翻译或发布。" if args.rehearsal else ""))}

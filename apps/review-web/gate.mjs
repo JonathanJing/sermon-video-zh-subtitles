@@ -226,7 +226,7 @@ export function setupDecision(gate, { collect, onChange }) {
     $("confirm-send").disabled = true;
     try {
       const reply = await submitDecision(gate, {
-        verdict: pendingVerdict, checks: checks(), payload: result.payload, note: note.value.trim(), client: result.client }, key);
+        verdict: pendingVerdict, checks: result.checks || checks(), payload: result.payload, note: note.value.trim(), client: result.client }, key);
       dialog.close();
       gate.state = "submitted";
       if (!demo) renderState(gate);

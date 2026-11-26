@@ -8,13 +8,19 @@
     "folderUrl": "https://drive.google.com/drive/folders/1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF",
     "description": "Broadcast Message Files: the edited message file that is played on Sunday",
     "attribution": "English source: Mariners Church weekend message. Personal project, not affiliated with Mariners Church.",
-    "acceptMimePrefixes": ["video/"],
+    "acceptMimePrefixes": [
+      "video/"
+    ],
     "minBytes": 100000000,
     "window": "whole_media"
   },
   "defaults": {
     "form": "full",
-    "locales": ["zh-Hans", "ko", "es"],
+    "locales": [
+      "zh-Hans",
+      "ko",
+      "es"
+    ],
     "sync": true,
     "publish": "production_page",
     "speakerId": "eric_geiger",
@@ -27,7 +33,12 @@
     "chunkSeconds": 240,
     "textMaxAttempts": 3,
     "uploadMaxBytes": 24000000,
-    "uploadBitratesKbps": [64, 48, 40, 32],
+    "uploadBitratesKbps": [
+      64,
+      48,
+      40,
+      32
+    ],
     "basePrompt": "Sermon from Mariners Church weekend service. Names and terms: Jesus, Mariners Church, Irvine, Tustin, North OC, Eric Geiger, Steve Bang Lee, John Thomas.",
     "estimatedUsdPerAudioMinute": {
       "whisper-1": 0.006,
@@ -62,6 +73,12 @@
       "grantedAt": "2026-11-25",
       "statement": "页面上的提交算正式结论",
       "scope": "A decision submitted on the tailnet review page is the formal human conclusion for the gate it names, bound to the hashes the page showed."
+    },
+    "defaultApproveUnreviewed": {
+      "grantedBy": "user (chat)",
+      "grantedAt": "2026-11-25",
+      "statement": "批准表页面，加上批准按钮，不要求全部都审完，剩下的默认批准",
+      "scope": "English table page only: approving is one action, and sentences the reviewer did not hear or edit are approved by default. The receipt records how many were looked at."
     }
   }
 }

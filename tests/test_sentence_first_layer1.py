@@ -148,6 +148,8 @@ def test_english_package_binds_the_decision_and_passes_the_published_reference_c
     assert (package["status"], package["translationEligible"], package["review"]["humanApproval"]) == ("ready_for_translation", True, True)
     assert package["review"]["reviewer"] == "Me (tailscale, review page)" and package["review"]["reviewedAt"] == "2026-11-29T04:00:05+00:00"
     assert package["review"]["decision"]["decisionId"] == "d-1" and package["review"]["decision"]["authority"] == "config/x.json#a"
+    assert package["review"]["reviewScope"] == {"mode": "page_checks", "candidateUnits": 7, "heardUnits": 1, "editedUnits": 0,
+                                                "lookedAtUnits": 1, "approvedByDefaultUnits": 0, "flaggedUnits": None, "flaggedUnheard": None}
     assert package["source"]["approvedWindow"]["status"] == "approved" and package["source"]["approvedWindow"]["end"] == manifest["input"]["mediaDurationSeconds"]
     # the same requirements tongxing_production.delivery.published_english_reference.build_reference enforces
     reference = pytest.importorskip("tongxing_production.delivery.published_english_reference")
@@ -166,6 +168,22 @@ def test_english_package_binds_the_decision_and_passes_the_published_reference_c
     report = preflight.Report()
     preflight.check_english_package(out / "english-source.json", {"sentences": [{"sourceUnitId": i} for i in ids]}, report, tmp_path)
     assert report.result()["status"] == "pass", report.result()["errors"]
+
+
+def test_an_approval_without_reviewing_every_sentence_says_how_many_were_approved_by_default(tmp_path):
+    def record(manifest):
+        value = decision_record(manifest)
+        value["decision"]["payload"] = {"edits": {"replace": {"u0003": "The writer says the city had 12 gates, each named."}},
+                                        "heardUnitIds": ["u0001", "u0003"],
+                                        "approval": {"mode": "default_approve_unreviewed", "units": 7, "heardUnits": 2, "editedUnits": 1,
+                                                     "lookedAtUnits": 2, "flaggedUnits": 3, "flaggedUnheard": 2}}
+        return value
+    package, out, _ = english_source(tmp_path, record)
+    receipt = json.loads((out / "english-approval-receipt.json").read_text())
+    assert package["review"]["humanApproval"] is True and package["status"] == "ready_for_translation"
+    assert receipt["reviewScope"] == {"mode": "default_approve_unreviewed", "candidateUnits": 7, "heardUnits": 2, "editedUnits": 1,
+                                      "lookedAtUnits": 2, "approvedByDefaultUnits": 5, "flaggedUnits": 3, "flaggedUnheard": 2}
+    assert "其余 5 句按默认批准" in receipt["note"] and len(receipt["reviewedSourceUnitIds"]) == 7
 
 
 def test_a_rehearsal_writes_the_package_but_approves_nothing(tmp_path):

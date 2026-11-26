@@ -33,7 +33,7 @@
       <h2 id="rows-title">逐句核对</h2>
       <span class="small muted" id="shown"></span>
     </header>
-    <p class="lead">点 ▶ 听这一句的原声，对照文字。先看有标记的句子。发现问题可以直接改字、并入上一句或删除；提交时这些修改会一并应用，被批准的是改完之后的句表。</p>
+    <p class="lead">点 ▶ 听这一句的原声，对照文字。先看有标记的句子，不必全部看完。发现问题可以直接改字、并入上一句或删除；提交时这些修改会一并应用，被批准的是改完之后的句表。</p>
     <div class="chips" id="filters" role="group" aria-label="筛选">
       <button type="button" data-filter="all" aria-pressed="true">全部</button>
       <button type="button" data-filter="flagged" aria-pressed="false">有标记</button>
@@ -52,19 +52,15 @@
 
   <section class="card" aria-labelledby="decision-title">
     <header><h2 id="decision-title">结论</h2></header>
-    <fieldset class="checks" id="checks">
-      <legend>批准前逐项确认</legend>
-      <label class="check"><input type="checkbox" data-check="sourceIdentity">
-        <span>来源正确<small>这就是本周的正式播放版，讲员和讲题对得上。</small></span></label>
-      <label class="check"><input type="checkbox" data-check="transcriptCompleteness">
-        <span>文字完整<small>没有漏掉的段落，也没有原声里没有的内容。</small></span></label>
-      <label class="check"><input type="checkbox" data-check="wordAlignment">
-        <span>声音和文字对得上<small>点开的句子，播放的就是这一句，起止没有切到别的句子。</small></span></label>
-      <label class="check"><input type="checkbox" data-check="sentenceAndPauseBoundaries">
-        <span>断句合理<small>没有把一句话切坏；该合并或删除的已经在上面标出。</small></span></label>
-      <label class="check"><input type="checkbox" data-check="window">
-        <span>窗口正确<small id="window-text">整段媒体都是要翻译的内容。</small></span></label>
-    </fieldset>
+    <p class="lead">不用逐句看完。先看有标记的句子，够了就可以批准：没有逐句看的句子在你批准时按默认通过，收据会如实记下你听了几句、改了几句。</p>
+    <h3>批准即表示你确认</h3>
+    <ul class="status-list" id="affirms">
+      <li data-affirm="sourceIdentity"><span class="mark">·</span><span>来源正确<small>这就是本周的正式播放版，讲员和讲题对得上。</small></span></li>
+      <li data-affirm="transcriptCompleteness"><span class="mark">·</span><span>文字完整<small>没有漏掉的段落，也没有原声里没有的内容。</small></span></li>
+      <li data-affirm="wordAlignment"><span class="mark">·</span><span>声音和文字对得上<small>点开的句子，播放的就是这一句。</small></span></li>
+      <li data-affirm="sentenceAndPauseBoundaries"><span class="mark">·</span><span>断句合理<small>该合并或删除的已经在上面标出。</small></span></li>
+      <li data-affirm="window"><span class="mark">·</span><span>窗口正确<small id="window-text">整段媒体都是要翻译的内容。</small></span></li>
+    </ul>
     <label class="field"><span>备注（要求修改时必填）</span><textarea id="note"></textarea></label>
     <details class="bindings">
       <summary>这次决定绑定的版本</summary>
