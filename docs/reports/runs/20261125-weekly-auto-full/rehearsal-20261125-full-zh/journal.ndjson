@@ -1,0 +1,12 @@
+{"at": "2026-11-26T04:29:21+00:00", "stage": "l1.start", "event": "started", "hostId": "host-96c3a4d6a7da", "pid": 28651}
+{"at": "2026-11-26T04:29:24+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-96c3a4d6a7da", "pid": 28673}
+{"at": "2026-11-26T04:29:24+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-96c3a4d6a7da", "pid": 28673}
+{"at": "2026-11-26T04:29:24+00:00", "stage": "l1.start", "event": "finished", "hostId": "host-96c3a4d6a7da", "pid": 28651}
+{"at": "2026-11-26T04:38:40+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-96c3a4d6a7da", "pid": 35533}
+{"at": "2026-11-26T04:38:40+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-96c3a4d6a7da", "pid": 35533}
+{"at": "2026-11-26T04:40:04+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-96c3a4d6a7da", "pid": 36296}
+{"at": "2026-11-26T04:40:04+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-96c3a4d6a7da", "pid": 36296}
+{"at": "2026-11-26T05:11:53+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-96c3a4d6a7da", "pid": 54713}
+{"at": "2026-11-26T05:15:40+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-96c3a4d6a7da", "pid": 54713}
+{"at": "2026-11-26T05:48:15+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-96c3a4d6a7da", "pid": 75873}
+{"at": "2026-11-26T05:51:09+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-96c3a4d6a7da", "pid": 75873}

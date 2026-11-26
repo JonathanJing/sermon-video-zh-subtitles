@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261125-weekly-auto-full",
+  "runs": [
+    {
+      "label": "rehearsal-20261125-full",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/weekly-auto/rehearsal-20261125-full",
+      "skipped": {
+        "(none)": 1,
+        ".lock": 1,
+        ".json": 31,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "rehearsal-20261125-full-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/sentence-first-agent/rehearsal-20261125-full-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 21,
+        ".jsonl": 21,
+        ".wav": 1499,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "rehearsal-20261125-full-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/sentence-first-agent/rehearsal-20261125-full-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 14,
+        ".jsonl": 21,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 1617,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "rehearsal-20261125-full-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/sentence-first-agent/rehearsal-20261125-full-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 14,
+        ".jsonl": 19,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 1585,
+        ".ndjson": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "rehearsal-20261125-full",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 9840,
+      "truncated": false,
+      "sha256": "c2c6bdc1d607938aaafb3d538651ade2499079a980798d69ee38469d67a2455e",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1188,
+      "truncated": false,
+      "sha256": "2f6d06db4822fd46606a14760f10448b62c4cb0433046322530a50326a0d294e",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1514,
+      "truncated": false,
+      "sha256": "23bc9ad52d04de6abe076531c5ded776fe161d132eb7494eaf113333a114a46d",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 898,
+      "truncated": false,
+      "sha256": "22dca02d7443644756ec246ecf251103fc46b7a670d799c3fdd432b2de71e6c3",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "rehearsal-20261125-full-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 202,
+      "truncated": false,
+      "sha256": "36e12469ccd6a00506230326938a6694c52b47673ebb62c9574ea778f5138576",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 186366,
+      "truncated": true,
+      "sha256": "565c9107ca53e66386612037cb4ec681b2f3e39e44d0d30542fbc61c1514b552",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1022,
+      "truncated": false,
+      "sha256": "231a42a67119f59010c58fc2a30fc0ab09f72c723ea29a1ab062995f0b60da81",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 893,
+      "truncated": false,
+      "sha256": "32cbadbb250e586bb0e389254e2895c540a22cc8dfaafd62100ca1e603351d18",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "rehearsal-20261125-full-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 177,
+      "truncated": false,
+      "sha256": "0dcbcc00b07523f5d404787ba496398c245009775e972a2a3ef691e6b8b1d082",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 170583,
+      "truncated": true,
+      "sha256": "7fbc983d50885d72a888a9b3678fc49edd83768a3125bbb4a590e58a7de14f71",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1022,
+      "truncated": false,
+      "sha256": "d54839e43f3094ddee1047b35440bccd673b990fa8e8425bc4de0bb40aaa4c08",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 893,
+      "truncated": false,
+      "sha256": "cfdb4d2a64d949c15745a9f0161c14a09e3d63c363e83e0931291cd2b94e81f0",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "rehearsal-20261125-full-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 177,
+      "truncated": false,
+      "sha256": "94a6114a986f3aae3433936f7ce162f33ececa1fc432bd6a0d05c1bd3abfd30f",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-full-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 186462,
+      "truncated": true,
+      "sha256": "7e66014db9a62e69d84c115cec67a2daa9b8bb9c2c64c9dd0047bcce4c32780b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
