@@ -1,0 +1,23 @@
+{"at": "2026-11-26T00:22:15+00:00", "stage": "source.accept", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:15+00:00", "stage": "source.accept", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:15+00:00", "stage": "source.download", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:15+00:00", "stage": "source.download", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:15+00:00", "stage": "source.derive", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "source.derive", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "gate.decisions", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "gate.decisions", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "l1.prompt", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "l1.prompt", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "l1.transcribe", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "l1.transcribe", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:21+00:00", "stage": "l1.anchor", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "l1.anchor", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "l1.rows", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "l1.rows", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "gate.english", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "gate.english", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "wait.review", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 87638}
+{"at": "2026-11-26T00:22:22+00:00", "stage": "wait.review", "event": "waiting", "hostId": "host-db26dcbe1a09", "pid": 87638, "waitingOn": "human review on the review page"}
+{"at": "2026-11-26T00:25:10+00:00", "stage": "wait.review", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 89315}
+{"at": "2026-11-26T00:25:10+00:00", "stage": "handoff", "event": "started", "hostId": "host-db26dcbe1a09", "pid": 89315}
+{"at": "2026-11-26T00:25:10+00:00", "stage": "handoff", "event": "finished", "hostId": "host-db26dcbe1a09", "pid": 89315}

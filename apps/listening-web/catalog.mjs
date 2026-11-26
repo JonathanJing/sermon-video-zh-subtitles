@@ -24,6 +24,22 @@ export function isPodcastWeek(week) {
   return contentKindOf(week) === 'podcast';
 }
 
+// Header lines are the same on every surface (web, iOS, the static page): series, title,
+// date · speaker, scripture. The series is shown once. A title ending in " · series" drops that
+// suffix (as iOS always has); a title that starts with "series · " — the approved podcast format —
+// keeps its published wording, and the separate series line is left out instead.
+export function headingLines(title, series) {
+  const value = typeof title === 'string' ? title.trim() : '';
+  const name = typeof series === 'string' ? series.trim() : '';
+  const separator = ' · ';
+  if (!value || !name) return { title: value, series: name };
+  if (value.endsWith(separator + name) && value.length > name.length + separator.length) {
+    return { title: value.slice(0, -(name.length + separator.length)).trim(), series: name };
+  }
+  if (value.startsWith(name + separator)) return { title: value, series: '' };
+  return { title: value, series: name };
+}
+
 const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
 const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
 

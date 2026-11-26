@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261125-weekly-auto-tracks-40",
+  "runs": [
+    {
+      "label": "rehearsal-20261125-tracks",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/weekly-auto/rehearsal-20261125-tracks",
+      "skipped": {
+        "(none)": 1,
+        ".lock": 1,
+        ".json": 29,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "rehearsal-20261125-tracks-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/sentence-first-agent/rehearsal-20261125-tracks-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 16,
+        ".jsonl": 17,
+        ".wav": 136,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "rehearsal-20261125-tracks-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/sentence-first-agent/rehearsal-20261125-tracks-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 14,
+        ".jsonl": 17,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 138,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "rehearsal-20261125-tracks-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/weekly-auto/artifacts/sentence-first-agent/rehearsal-20261125-tracks-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 14,
+        ".jsonl": 17,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 144,
+        ".ndjson": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "rehearsal-20261125-tracks",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 7898,
+      "truncated": false,
+      "sha256": "978fb1c2d7805500dd5695cfc43650aafa3416e176659f0fb283ee1db92c1ba2",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1107,
+      "truncated": false,
+      "sha256": "5b7b45c75b888a1cfd43c2fe8dadc5d5cab4ee337d8e77cb3d90b35f8426482b",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1532,
+      "truncated": false,
+      "sha256": "e48cc7018317954e16b625cbcff3936649a82ac8a2bdb307dca963632676f57b",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 899,
+      "truncated": false,
+      "sha256": "1ced9cda129b4d8f4e766c52362fd5cd058787eeeb5fdc45a8f1cb267673e273",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "rehearsal-20261125-tracks-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 196,
+      "truncated": false,
+      "sha256": "ec7dd4cd8bf100eb765bf6bd6d148782ac73a712bc4d407af1de3e77afbb5eef",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 16198,
+      "truncated": false,
+      "sha256": "2394f90f579f239b40706d810d56982fb230ba6ab817da3134fb4d5a9d72a9b2",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1022,
+      "truncated": false,
+      "sha256": "36e2991919a2870f27483e245ab74b30a6417140158bdaf4f814d40b65b0c820",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 894,
+      "truncated": false,
+      "sha256": "64279a37e0155ef5f266c7f81511e7a1787b1e42b4ab7be7fb2cd062c827563e",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "rehearsal-20261125-tracks-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "6b1c6900d8b95f63ad14507a73980589ee354a9a5d7a4831574460c702f890f9",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 16193,
+      "truncated": false,
+      "sha256": "38565effceff18d0b021e7df8d9c3757f1b1cfc3ba0ad8d13cde14c637694aba",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1022,
+      "truncated": false,
+      "sha256": "569ee05c13d226f8cdded64e6f984478526a51dfcd885febd712f97623bef8a8",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 894,
+      "truncated": false,
+      "sha256": "f6bf2d653dcf1ad3a239a59b4362e924eaf9723e01f3f2707a3797e55babbf1f",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "rehearsal-20261125-tracks-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "06e3fcc761993ac860292fd426d7aac1eb88f0709749cc16c649464f2e6ef57d",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125-tracks-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 16192,
+      "truncated": false,
+      "sha256": "c25abdb4fc26d1cb5d28fedaa8d6db72057e2ef02543fab45bf2a37e1efdfee3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

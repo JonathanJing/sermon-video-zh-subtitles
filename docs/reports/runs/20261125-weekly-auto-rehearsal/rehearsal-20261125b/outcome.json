@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "weekly-auto-outcome-v1",
+  "production": "rehearsal-20261125b",
+  "status": "rehearsal_complete",
+  "exitCode": 0,
+  "rehearsal": true,
+  "deliveryType": "test (rehearsal)",
+  "humanApproval": false,
+  "stages": {
+    "source.accept": "done",
+    "source.download": "done",
+    "source.derive": "done",
+    "gate.decisions": "done",
+    "l1.prompt": "done",
+    "l1.transcribe": "done",
+    "l1.anchor": "done",
+    "l1.rows": "done",
+    "gate.english": "done",
+    "wait.review": "done",
+    "handoff": "done"
+  },
+  "failedStages": {},
+  "notices": {
+    "sent": 5,
+    "undelivered": 0
+  },
+  "at": "2026-11-26T00:25:10+00:00"
+}
