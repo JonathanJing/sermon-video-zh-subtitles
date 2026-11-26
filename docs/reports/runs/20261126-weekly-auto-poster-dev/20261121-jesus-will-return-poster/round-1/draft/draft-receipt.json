@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "tongxing-poster-design-draft-v1",
+  "pageId": "revelation-jesus-will-return-20261122",
+  "locale": "zh-Hans",
+  "promptSha256": "92f355732e287475205395437ee36dd00cfd9d5686cd209d103ddb68844fc81e",
+  "responseSha256": "2d9a56085148ec20baf418ce7532b3748d226369da08938a136cf0ac4e8da709",
+  "chosenCandidate": "c1",
+  "candidateTotals": {
+    "c1": 11,
+    "c2": 10,
+    "c3": 8
+  },
+  "warnings": [
+    "user choice is pending"
+  ],
+  "codexCall": "~/dev/sermon-video-zh-subtitles/.claude/worktrees/weekly-auto/artifacts/sentence-first-agent/20261121-jesus-will-return-poster/round-1/draft/codex-call",
+  "codexCallReceipt": {
+    "id": "codex:01a218de-f795-7fc0-9dbd-f97627254f63",
+    "threadId": "01a218de-f795-7fc0-9dbd-f97627254f63",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "medium",
+    "usage": {
+      "input_tokens": 33217,
+      "cached_input_tokens": 0,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 2054,
+      "reasoning_output_tokens": 111
+    },
+    "elapsedSeconds": 32.5429798749974,
+    "requestedServiceTier": "fast"
+  },
+  "validatedAt": "2026-11-26T17:20:27.765705+00:00"
+}

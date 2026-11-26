@@ -1,0 +1,45 @@
+{"at": "2026-11-26T16:49:01+00:00", "stage": "l4.config", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79175}
+{"at": "2026-11-26T16:49:06+00:00", "stage": "l4.config", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:06+00:00", "stage": "l4.config", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:06+00:00", "stage": "l4.preflight", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:07+00:00", "stage": "l4.preflight", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:07+00:00", "stage": "l4.assets", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:20+00:00", "stage": "l4.assets", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:20+00:00", "stage": "l4.fingerprint", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:23+00:00", "stage": "l4.fingerprint", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:49:23+00:00", "stage": "l4.stage1", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:51:11+00:00", "stage": "l4.stage1", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:51:11+00:00", "stage": "gate.publish", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:51:11+00:00", "stage": "gate.publish", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:51:11+00:00", "stage": "wait.publish", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 79198}
+{"at": "2026-11-26T16:51:11+00:00", "stage": "wait.publish", "event": "waiting", "hostId": "host-7e4dfc300b9c", "pid": 79198, "waitingOn": "human review on the review page"}
+{"at": "2026-11-26T17:01:20+00:00", "stage": "wait.publish", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:01:20+00:00", "stage": "l4.deploy1", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:03:22+00:00", "stage": "l4.deploy1", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:03:22+00:00", "stage": "l4.verify", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:03:30+00:00", "stage": "l4.verify", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:03:30+00:00", "stage": "l4.stage2", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:03:40+00:00", "stage": "l4.stage2", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:03:40+00:00", "stage": "l4.deploy2", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:34+00:00", "stage": "l4.deploy2", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:34+00:00", "stage": "l4.readback", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:35+00:00", "stage": "l4.readback", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:35+00:00", "stage": "l4.gate", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:44+00:00", "stage": "l4.gate", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:44+00:00", "stage": "gate.confirm", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:44+00:00", "stage": "gate.confirm", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:44+00:00", "stage": "wait.confirm", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 81416}
+{"at": "2026-11-26T17:05:44+00:00", "stage": "wait.confirm", "event": "waiting", "hostId": "host-7e4dfc300b9c", "pid": 81416, "waitingOn": "human review on the review page"}
+{"at": "2026-11-26T17:19:54+00:00", "stage": "poster.design", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:20:27+00:00", "stage": "poster.design", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:20:27+00:00", "stage": "poster.artwork", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:32+00:00", "stage": "poster.artwork", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:32+00:00", "stage": "poster.compose", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:36+00:00", "stage": "poster.compose", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:36+00:00", "stage": "gate.poster", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:37+00:00", "stage": "gate.poster", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:37+00:00", "stage": "wait.poster", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 88978}
+{"at": "2026-11-26T17:21:37+00:00", "stage": "wait.poster", "event": "waiting", "hostId": "host-7e4dfc300b9c", "pid": 88978, "waitingOn": "human review on the review page"}
+{"at": "2026-11-26T21:15:04+00:00", "stage": "wait.poster", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 8981}
+{"at": "2026-11-26T21:15:04+00:00", "stage": "poster.publish", "event": "started", "hostId": "host-7e4dfc300b9c", "pid": 8981}
+{"at": "2026-11-26T21:18:40+00:00", "stage": "poster.publish", "event": "finished", "hostId": "host-7e4dfc300b9c", "pid": 8981}

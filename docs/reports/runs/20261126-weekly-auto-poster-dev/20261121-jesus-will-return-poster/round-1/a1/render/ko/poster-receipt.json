@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "revelation-jesus-will-return-20261122",
+    "targetLocale": "ko",
+    "sourceIdentitySha256": "fb9de13bffc566681659f2d64a209a4da702545ac7aed73cce9f7913ac6984ae",
+    "catalogSha256": "014040a15b9fd777f104f6145a369e86306a97f9380548c94f2a7dc944aa4a4f",
+    "releasePackageSha256": "c65779304fe4294268b790d411b50c0b13e03c9fa2a44363a23485d471596c8c",
+    "contentSha256": "044c2cd40b081ba26c6de5631a4eaea0e2b30ad9d0765d76e62142c460ca6ca5",
+    "brief": {
+      "locale": "ko",
+      "date": "2026-11-22",
+      "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+      "title": "예수님은 다시 오실 것입니다",
+      "series": "요한계시록: 예수님이 주시는 위로와 소망",
+      "scripture": "요한계시록 19:11-21:8",
+      "speaker": "Eric Geiger",
+      "tagline": "함께 듣고, 함께 걸어갑니다.",
+      "reviewLabel": "번역과 음성 검토 완료",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "이번 주 설교 · 한국어",
+        "cta": "이번 주 설교 읽기 · 듣기",
+        "serviceLine": "한국어 음성 · 영어 대조 · 전체 원고",
+        "qrCaption": "이번 주 한국어로 바로 열기",
+        "disclaimer": "Mariners Church와 제휴하거나 공식 후원을 받지 않는 개인 독립 프로젝트입니다.\nAI로 합성한 한국어 오디오와 정리한 텍스트는 개인 참고용입니다.",
+        "header": "Tongxing   ───   이번 주 설교",
+        "web": "웹 버전",
+        "caption": "QR 코드로 읽기 · 듣기",
+        "storeHeading": "Tongxing 앱 다운로드",
+        "webHeading": "이번 주 설교 웹 버전",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio-dev.web.app/?week=revelation-jesus-will-return-20261122&contentLang=ko&lang=ko",
+      "displayTitle": "예수님은 다시 오실 것입니다",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "08b7dd24bab8a770f68b9a87822875636ff35404dfb29b85ff92ca7a3ac19c47",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "41695f2dae1c7916b1c027a25c9ea96df32122c948fbda1031dc5c8192b0a063",
+    "promptSha256": "9449019950a7ad3d587a4ccf3b154eab90fa5e332a6c211545bb7d4b925f8371",
+    "rendererSha256": "df7840eabb8c01b019726a18f4263d747621ffa69b8a7f15b4347313210980c1",
+    "builderSha256": "4c70d50d5763df604deb522ef556acb85a5e7a92d6eff685c81ef2c322e43e20"
+  },
+  "outputs": {
+    "poster.png": "5b5f27c4deb0912dcea197d2481fa2caa40accaa01322d360bffb12ac5b5ed47",
+    "poster-preview.png": "81add706b0aba9aaa1ef38138464e5b61b78892e19b7a73217c296d555b53a5c",
+    "qr-validation.json": "75f84e1eb57dce4479ce66f6ac1734885053d5820d43d0f880656e9bf3076827"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-11-26T21:15:05.472134+00:00",
+    "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v5.json",
+        "sha256": "014040a15b9fd777f104f6145a369e86306a97f9380548c94f2a7dc944aa4a4f",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-will-return-20261122/zh-Hans.json",
+        "sha256": "fbfa78a741de5d4dc5492dd5602de571d976c0f456622e4ffb5d2551b5cb289c",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-will-return-20261122/zh-Hans.json",
+        "sha256": "49f00f6f9886b3686fdf597f4b39b025b34e436d8d7d3decf53076bc7c3928b0",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-will-return-20261122/ko.json",
+        "sha256": "c65779304fe4294268b790d411b50c0b13e03c9fa2a44363a23485d471596c8c",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-will-return-20261122/ko.json",
+        "sha256": "044c2cd40b081ba26c6de5631a4eaea0e2b30ad9d0765d76e62142c460ca6ca5",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-will-return-20261122/es.json",
+        "sha256": "6a36079f9b8595d89dbe8f0b57e17b9126df0eae3bbd5c6f5f4c6b63807d906e",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-will-return-20261122/es.json",
+        "sha256": "0e320305e729aeecc704a5812f6a6f03a34ad744d2df4d9dfeb0c1aa16410a99",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "Jony (answer in the Claude session, 2026-11-26, entered by the agent) (review page, decision d-20261126T211504-826dd8f8)",
+    "humanApproval": true
+  },
+  "visualReviewedAt": "2026-11-26T21:15:05.489039+00:00"
+}
