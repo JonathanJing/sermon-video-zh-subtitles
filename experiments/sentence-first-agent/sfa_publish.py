@@ -53,6 +53,7 @@ from tongxing_production.delivery import baseline as bl, contract, publication a
 from tongxing_production.delivery import published_english_reference as english_reference  # noqa: E402
 from tongxing_production.delivery import snapshot_clone  # noqa: E402
 from tools.ops import set_catalog_default_page as default_page  # noqa: E402
+from tools.ops import page_heading  # noqa: E402
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
@@ -194,6 +195,22 @@ def write_json(path: Path, value) -> None:
 def reader(url):
     with urlopen(Request(url, headers={"Cache-Control": "no-cache"}), timeout=120) as response:
         return response.status, response.read()
+
+
+def static_heading_html(content: dict) -> str:
+    """Header lines of the static page, from the content JSON the apps read.
+
+    Same lines and order as web and iOS (tools/ops/page_heading.py): series, title,
+    date · speaker, scripture. sfa_publish_gate checks the published page against it.
+    """
+    title, series = page_heading.heading_lines(content.get("title"), content.get("series"))
+    parts = [f'<p class="series">{html.escape(series)}</p>' if series else "",
+             f"<h1>{html.escape(title)}</h1>",
+             f'<p class="details">{html.escape(page_heading.details_line(content.get("date"), content.get("speaker")))}</p>']
+    scripture = (content.get("scripture") or "").strip()
+    if scripture:
+        parts.append(f'<p class="scripture">{html.escape(scripture)}</p>')
+    return "".join(parts)
 
 
 def ios_cue_check(cues, duration, requires_units):
@@ -959,8 +976,9 @@ def cmd_assets(cfg: PageConfig, out: Path, *, allow_missing_journal_gates: bool 
         body = "".join(f"<p>{html.escape(tr[s['id']]['target'])}</p>" for s in sent)
         page = (f'<!doctype html><html lang="{locale}"><head><meta charset="utf-8">'
                 f'<meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(meta["title"])}</title>'
-                '<style>body{max-width:48rem;margin:auto;padding:1.2rem;font:1.1rem/1.7 system-ui}audio{width:100%}</style></head>'
-                f'<body><h1>{html.escape(meta["title"])}</h1><p>{cfg.date} · {html.escape(cfg.speakers)}</p>'
+                '<style>body{max-width:48rem;margin:auto;padding:1.2rem;font:1.1rem/1.7 system-ui}audio{width:100%}'
+                '.series,.scripture{color:#666;margin:.2rem 0}</style></head>'
+                f'<body>{static_heading_html(content)}'
                 f'<p>{html.escape(meta["badge"])}</p>'
                 f'<audio controls preload="none" src="/media/{cfg.page_id}/{locale}.mp3"></audio>'
                 f'<p><a href="{cfg.source_url}">{html.escape(meta["source"])}</a></p>'

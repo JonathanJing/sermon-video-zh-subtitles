@@ -146,3 +146,17 @@ test('reject duplicate, missing and invalid bilingual identities and unknown sch
     assert.throws(() => validateCatalog(c));
   }
 });
+
+test('heading lines show the series once and keep the approved podcast title', async () => {
+  const { headingLines } = await import('./catalog.mjs');
+  const series = '启示录：耶稣带来的安慰与盼望';
+  assert.deepEqual(headingLines('耶稣必再来', series), { title: '耶稣必再来', series });
+  // Legacy titles carry the series as a suffix: drop it from the title line.
+  assert.deepEqual(headingLines(`耶稣的应许 · ${series}`, series), { title: '耶稣的应许', series });
+  // Podcast titles are published as "series · title": keep them, leave out the series line.
+  assert.deepEqual(headingLines('如果我有更多时间 · 耶稣必再来', '如果我有更多时间'), { title: '如果我有更多时间 · 耶稣必再来', series: '' });
+  assert.deepEqual(headingLines('If I Had More Time · Jesús volverá', 'If I Had More Time'), { title: 'If I Had More Time · Jesús volverá', series: '' });
+  assert.deepEqual(headingLines('如果我有更多时间', '如果我有更多时间'), { title: '如果我有更多时间', series: '如果我有更多时间' });
+  assert.deepEqual(headingLines('Grace', ''), { title: 'Grace', series: '' });
+  assert.deepEqual(headingLines('Grace', undefined), { title: 'Grace', series: '' });
+});
