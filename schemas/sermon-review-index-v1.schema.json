@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-index-v1.schema.json",
+  "title": "The steps of one production that wait for a person",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "production",
+    "episode",
+    "worker",
+    "gates"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-index-v1"
+    },
+    "production": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sunday": {
+          "type": "string"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "speaker": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "worker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lastSeenAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gateId",
+          "kind",
+          "locale",
+          "title",
+          "state",
+          "summary"
+        ],
+        "properties": {
+          "gateId": {
+            "type": "string",
+            "pattern": "^l[0-9]\\.[A-Za-z0-9.-]+$"
+          },
+          "kind": {
+            "enum": [
+              "decisions",
+              "english",
+              "speakers",
+              "track",
+              "study",
+              "publish",
+              "confirm"
+            ]
+          },
+          "locale": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "open",
+              "submitted",
+              "applied",
+              "changes_requested",
+              "stale",
+              "skipped"
+            ]
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "openedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decidedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

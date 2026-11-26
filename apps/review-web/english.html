@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>英文表批准 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="english">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>英文表批准</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="facts-title">
+    <header><h2 id="facts-title">来源与句表</h2></header>
+    <dl class="kv" id="facts"></dl>
+    <p class="lead">英文表是三种语言共用的底稿。这里批准之后才开始翻译；之后再改英文，三种语言都要跟着改。</p>
+  </section>
+
+  <section class="card" aria-labelledby="rows-title">
+    <header>
+      <h2 id="rows-title">逐句核对</h2>
+      <span class="small muted" id="shown"></span>
+    </header>
+    <p class="lead">点 ▶ 听这一句的原声，对照文字。先看有标记的句子。发现问题可以直接改字、并入上一句或删除；提交时这些修改会一并应用，被批准的是改完之后的句表。</p>
+    <div class="chips" id="filters" role="group" aria-label="筛选">
+      <button type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-filter="flagged" aria-pressed="false">有标记</button>
+      <button type="button" data-filter="edited" aria-pressed="false">机器改过</button>
+      <button type="button" data-filter="disagree" aria-pressed="false">两遍不一致</button>
+      <button type="button" data-filter="number" aria-pressed="false">数字／经文</button>
+      <button type="button" data-filter="long" aria-pressed="false">超过 12 秒</button>
+      <button type="button" data-filter="mine" aria-pressed="false">我改过的</button>
+      <button type="button" data-filter="unheard" aria-pressed="false">有标记但没听</button>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="搜索英文或编号" aria-label="搜索英文或编号" autocomplete="off">
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>批准前逐项确认</legend>
+      <label class="check"><input type="checkbox" data-check="sourceIdentity">
+        <span>来源正确<small>这就是本周的正式播放版，讲员和讲题对得上。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="transcriptCompleteness">
+        <span>文字完整<small>没有漏掉的段落，也没有原声里没有的内容。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="wordAlignment">
+        <span>声音和文字对得上<small>点开的句子，播放的就是这一句，起止没有切到别的句子。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="sentenceAndPauseBoundaries">
+        <span>断句合理<small>没有把一句话切坏；该合并或删除的已经在上面标出。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="window">
+        <span>窗口正确<small id="window-text">整段媒体都是要翻译的内容。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（要求修改时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">要求修改</button>
+    <button type="button" class="primary" id="approve">批准英文表</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="english.mjs"></script>
+</body>
+</html>

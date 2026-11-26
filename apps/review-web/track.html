@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>整轨听审 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="track">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>整轨听审</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="track-title">
+    <header><h2 id="track-title">这一条音轨</h2></header>
+    <dl class="kv" id="track-facts"></dl>
+    <audio id="track" controls preload="metadata"></audio>
+    <progress id="coverage" max="1" value="0" aria-label="已按 1 倍速听过的比例"></progress>
+    <p class="small" id="coverage-text" role="status"></p>
+    <div class="row-tools">
+      <button type="button" class="small" id="resume">从上次听到的地方继续</button>
+      <button type="button" class="small" id="follow" aria-pressed="true">播放时跟着滚动</button>
+    </div>
+    <label class="check"><input type="checkbox" id="declared">
+      <span>我在别处完整听过这一版<small>例如下载到手机离线听。收据会写明这是你的声明，不是页面测到的。</small></span></label>
+    <p class="lead">听审方式由页面按实际播放记录：按 1 倍速听完整轨记为「整轨」；只听了有标记的句子记为「只听标记」。两种都可以提交，收据如实写。</p>
+  </section>
+
+  <section class="card" id="video-card" aria-labelledby="video-title" hidden>
+    <header><h2 id="video-title">对照原视频</h2></header>
+    <p class="lead">配音混回原视频的预览，用来抽查同步：看开头、中间、结尾，配音有没有明显落在画面后面。</p>
+    <video id="video" controls preload="none" playsinline></video>
+  </section>
+
+  <section class="card" aria-labelledby="rows-title">
+    <header><h2 id="rows-title">逐句</h2><span class="small muted" id="shown"></span></header>
+    <p class="lead">每句可以单独听配音、听原声，或先原声后配音。有问题就标出来并写一句说明；标了问题的句子会被改掉重配，再请你听这几句。</p>
+    <div class="chips" id="filters" role="group" aria-label="筛选">
+      <button type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-filter="flagged" aria-pressed="false">有标记</button>
+      <button type="button" data-filter="unheard" aria-pressed="false">有标记但没听</button>
+      <button type="button" data-filter="issue" aria-pressed="false">我标了问题</button>
+      <button type="button" data-filter="condensed" aria-pressed="false">精简过</button>
+      <button type="button" data-filter="lag" aria-pressed="false">落后</button>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="搜索译文、英文或编号" aria-label="搜索译文、英文或编号" autocomplete="off">
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>通过前逐项确认</legend>
+      <label class="check"><input type="checkbox" data-check="translation">
+        <span>译文已审<small>意思、否定、数字、人名、经文出处都对；精简过的句子没有删掉论点。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="voice">
+        <span>声音正确<small>是这位讲员的声音，没有串音、怪声或读错的字。</small></span></label>
+      <label class="check" id="sync-check"><input type="checkbox" data-check="sync">
+        <span>同步已抽查<small>开头、中间、结尾都看过，配音没有明显落后于画面。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（有问题，退回修改时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">有问题，退回修改</button>
+    <button type="button" class="primary" id="approve">这条音轨通过</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="track.mjs"></script>
+</body>
+</html>

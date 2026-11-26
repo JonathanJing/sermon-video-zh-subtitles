@@ -1,0 +1,135 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l1.speakers",
+ "kind": "speakers",
+ "production": "demo-20261129-sample",
+ "locale": null,
+ "title": "讲员确认",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T03:40:00+00:00",
+ "bindings": {
+  "sentencesJsonlSha256": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+  "speakersJsonSha256": "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "speakers": [
+   {
+    "id": "sample_speaker_a",
+    "name": "示例讲员甲"
+   },
+   {
+    "id": "sample_speaker_b",
+    "name": "示例讲员乙"
+   }
+  ],
+  "minShare": 0.8,
+  "sentenceCount": 790,
+  "bySpeaker": [
+   {
+    "speakerId": "sample_speaker_a",
+    "sentences": 412,
+    "seconds": 1210.5
+   },
+   {
+    "speakerId": "sample_speaker_b",
+    "sentences": 378,
+    "seconds": 1102.3
+   }
+  ],
+  "labels": [
+   {
+    "label": "SPEAKER_00",
+    "proposed": "sample_speaker_b",
+    "seconds": 1102.3,
+    "samples": [
+     {
+      "id": "s0012",
+      "english": "So let me ask you the first question.",
+      "audio": "slices/s0012.wav"
+     },
+     {
+      "id": "s0140",
+      "english": "That is a great way to put it.",
+      "audio": "slices/s0140.wav"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER_01",
+    "proposed": "sample_speaker_a",
+    "seconds": 1210.5,
+    "samples": [
+     {
+      "id": "s0015",
+      "english": "Well, I think it starts with how we read the passage.",
+      "audio": "slices/s0015.wav"
+     },
+     {
+      "id": "s0151",
+      "english": "And that is where the hope comes from.",
+      "audio": "slices/s0151.wav"
+     }
+    ]
+   }
+  ],
+  "toCheck": [
+   {
+    "id": "s0077",
+    "start": 301.2,
+    "english": "They,",
+    "share": 0.0,
+    "proposed": "sample_speaker_a",
+    "audio": "slices/s0077.wav",
+    "before": "And what did the first readers hear?",
+    "after": "they heard a promise."
+   },
+   {
+    "id": "s0103",
+    "start": 422.8,
+    "english": "Right.",
+    "share": 0.5,
+    "proposed": "sample_speaker_b",
+    "audio": "slices/s0103.wav",
+    "before": "It was written to people under pressure.",
+    "after": "And that changes how you read it."
+   },
+   {
+    "id": "s0256",
+    "start": 1010.4,
+    "english": "Yeah, exactly.",
+    "share": 0.62,
+    "proposed": "sample_speaker_a",
+    "audio": "slices/s0256.wav",
+    "before": "So it is comfort, not a puzzle.",
+    "after": "Comfort first."
+   },
+   {
+    "id": "s0388",
+    "start": 1502.9,
+    "english": "Mm-hmm.",
+    "share": 0.33,
+    "proposed": "sample_speaker_b",
+    "audio": "slices/s0388.wav",
+    "before": "Which is why the ending matters.",
+    "after": "It matters for today."
+   }
+  ]
+ },
+ "lastDecision": null
+}

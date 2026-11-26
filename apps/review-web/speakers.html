@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>讲员确认 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="speakers">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>讲员确认</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="summary-title">
+    <header><h2 id="summary-title">谁说了多少</h2></header>
+    <dl class="kv" id="summary"></dl>
+    <p class="lead">双人对谈才有这一步。先确认区分结果里的每个标签是哪一位，再逐句确认机器拿不准的句子。定下来之后才开始翻译和配音，每句会用对应讲员自己的声音。</p>
+  </section>
+
+  <section class="card" aria-labelledby="labels-title">
+    <header><h2 id="labels-title">标签是哪一位</h2></header>
+    <div class="rows" id="labels"></div>
+  </section>
+
+  <section class="card" aria-labelledby="rows-title">
+    <header><h2 id="rows-title">拿不准的句子</h2><span class="small muted" id="shown"></span></header>
+    <p class="lead" id="rows-lead"></p>
+    <div class="toolbar">
+      <button type="button" class="small" id="accept-rest">其余都按机器建议</button>
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>确认前逐项核对</legend>
+      <label class="check"><input type="checkbox" data-check="mapping">
+        <span>标签对应正确<small>每个标签我都听过样本，确认是这位讲员。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="sentences">
+        <span>存疑句已逐句确认<small>上面列出的句子，我都给出了讲员。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（要求修改时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">要求修改</button>
+    <button type="button" class="primary" id="approve">确认讲员</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="speakers.mjs"></script>
+</body>
+</html>

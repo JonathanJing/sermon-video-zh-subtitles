@@ -46,7 +46,8 @@
 | `tools/ops/build_alignment_sidecar.py` | 本机 | 从 Hosting 快照 + 三语索引生成现场对齐 sidecar（release 用文件字节哈希、窗口与 content 一致、`indexUrl` 按 sha 前 16 位）；默认 dry-run，`--write` 落盘 |
 | `tools/ops/reseal_snapshot.py` | 本机 | 目录重绑或新增文件后重算 `seal-report.json` 的目录哈希与文件清单，否则 guarded publisher 会以 `Baseline catalog differs`／`incomplete` 拒发 |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
-| `tools/ops/notify.py` | 本机 | Bark 传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；不进任何门禁 |
+| `tools/ops/notify.py` | 本机 | Bark 与邮件传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；非 passive 的通知在配置了 `gmail-user`／`gmail-app` 时同时发邮件；不进任何门禁 |
+| `tools/ops/production_notices.py` | 本机 | 全流程通知清单：每个状态的级别、渠道、链接和措辞；`list` 看全表，`preview`／`send` 生成或发送一条。规则见[人工审核页与通知](../../docs/design/review-gates-and-notifications.zh.md) |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
@@ -369,11 +370,13 @@ python3 $EXP/run_status.py production --production <首个 run 名>
 
 不要 wrap 自己会写 journal 的脚本（`sfa.py start`、`preflight.py`、`finish_run.py`、`lag_loop.py`、`consistency_check.py`），否则同一 stage 会写两次迁移。P1 起：`finish_run.py` 自己写五个子步骤的 progress；`lag_loop.py` 写每轮 iterations、成功记 E2、不过闸门记 failed；`sfa_publish.py` 每个子命令自动写 `l4.<command>` 的 started/finished/failed（首个 locale 的 run 为观察点）。手工开工、没有经过 `sfa.py start` 的 run 先用 `run_status.py register --run $RUN --locale <locale> --production <首个 run 名> --sync/--no-sync --publish/--no-publish` 登记。
 
-**离开电脑时（P2）**：状态里的开工、可审、失败、停滞、完成可以推到 Bark。key 只放登录钥匙串，不进 URL/日志/仓库；先用 `test-push` 真机确认：
+**离开电脑时（P2）**：状态里的开工、可审、失败、停滞、完成可以推到 Bark；钥匙串里另存了 `gmail-user`（发件地址）和 `gmail-app`（应用专用密码）时，非 passive 的通知同时发一封邮件作为第二条路（`gmail-to` 可改收件人；邮件不能像 Bark 那样穿透静音）。key 和密码只放登录钥匙串，不进 URL/日志/仓库；先用 `test-push` 真机确认，邮件已配置却没送达时退出码为 1：
 
 ```bash
 security add-generic-password -s org.sermonvideo.production-progress -a bark-iphone -w
 security add-generic-password -s org.sermonvideo.production-progress -a bark-mac -w
+security add-generic-password -s org.sermonvideo.production-progress -a gmail-user -w   # 可选：邮件第二通道
+security add-generic-password -s org.sermonvideo.production-progress -a gmail-app -w
 python3 tools/ops/notify.py test-push --level timeSensitive
 python3 $EXP/run_status.py notify --run $RUN              # dry run，只打印计划
 python3 $EXP/run_status.py notify --run $RUN --execute    # 发一次

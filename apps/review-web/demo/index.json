@@ -1,0 +1,107 @@
+{
+ "schemaVersion": "sermon-review-index-v1",
+ "production": "demo-20261129-sample",
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "worker": {
+  "lastSeenAt": "2026-11-29T04:52:00+00:00",
+  "state": "在线",
+  "stage": "韩语配音",
+  "detail": "212 / 435 句，预计 8 分钟后可审"
+ },
+ "gates": [
+  {
+   "gateId": "l0.decisions",
+   "kind": "decisions",
+   "locale": null,
+   "title": "开工确认",
+   "state": "applied",
+   "summary": "整期 · 三语 · 同步 · 正式页 · 全部按默认",
+   "openedAt": null,
+   "decidedAt": "2026-11-29T03:52:00+00:00"
+  },
+  {
+   "gateId": "l1.english-review",
+   "kind": "english",
+   "locale": null,
+   "title": "英文表批准",
+   "state": "applied",
+   "summary": "457 句 · 你改了 3 句",
+   "openedAt": null,
+   "decidedAt": "2026-11-29T04:08:00+00:00"
+  },
+  {
+   "gateId": "l1.speakers",
+   "kind": "speakers",
+   "locale": null,
+   "title": "讲员确认",
+   "state": "skipped",
+   "summary": "单讲员，不需要",
+   "openedAt": null,
+   "decidedAt": null
+  },
+  {
+   "gateId": "l3.review.zh-Hans",
+   "kind": "track",
+   "locale": "zh-Hans",
+   "title": "整轨听审",
+   "state": "open",
+   "summary": "32 分 22 秒 · 41 句有标记 · 最大落后 3.4 秒",
+   "openedAt": "2026-11-29T04:45:00+00:00",
+   "decidedAt": null
+  },
+  {
+   "gateId": "l3.review.ko",
+   "kind": "track",
+   "locale": "ko",
+   "title": "整轨听审",
+   "state": "pending",
+   "summary": "配音中",
+   "openedAt": null,
+   "decidedAt": null
+  },
+  {
+   "gateId": "l3.review.es",
+   "kind": "track",
+   "locale": "es",
+   "title": "整轨听审",
+   "state": "pending",
+   "summary": "排在韩语之后",
+   "openedAt": null,
+   "decidedAt": null
+  },
+  {
+   "gateId": "l4.study",
+   "kind": "study",
+   "locale": null,
+   "title": "学习内容批准",
+   "state": "open",
+   "summary": "三种语言的大纲与默想草稿",
+   "openedAt": "2026-11-29T04:30:00+00:00",
+   "decidedAt": null
+  },
+  {
+   "gateId": "l4.publish.authorization",
+   "kind": "publish",
+   "locale": null,
+   "title": "发布授权",
+   "state": "pending",
+   "summary": "等三条音轨和学习内容都有结论",
+   "openedAt": null,
+   "decidedAt": null
+  },
+  {
+   "gateId": "l4.device-confirm",
+   "kind": "confirm",
+   "locale": null,
+   "title": "发布后确认",
+   "state": "pending",
+   "summary": "发布之后",
+   "openedAt": null,
+   "decidedAt": null
+  }
+ ]
+}

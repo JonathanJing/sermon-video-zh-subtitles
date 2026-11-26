@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>本周审核 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="index">
+<header class="top">
+  <div class="top-title">
+    <h1>本周审核</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="now-title">
+    <header><h2 id="now-title">生产机现在在做什么</h2><span class="small muted" id="heartbeat"></span></header>
+    <dl class="kv" id="now"></dl>
+  </section>
+
+  <section class="card" aria-labelledby="gates-title">
+    <header><h2 id="gates-title">需要你的步骤</h2><span class="small muted" id="waiting"></span></header>
+    <p class="lead">生产到了需要人的地方会停下来等你，并推送这一页的链接。每一步的结论各自独立：批准英文表不等于批准音轨，授权发布不等于现场验收。</p>
+    <ol class="gate-list" id="gates"></ol>
+  </section>
+
+  <section class="card" aria-labelledby="rules-title">
+    <header><h2 id="rules-title">在页面上提交意味着什么</h2></header>
+    <ul class="status-list">
+      <li><span class="mark">·</span><span>页面上的提交就是正式结论<small>每个决定都绑定页面当时展示的文件哈希，并记下提交人的 Tailscale 身份。</small></span></li>
+      <li><span class="mark">·</span><span>文件变了，旧决定作废<small>生产机在应用决定前会重新核对哈希；对不上就拒绝，不会产生批准。</small></span></li>
+      <li><span class="mark">·</span><span>机器核对不是人工结论<small>页面上标「机器核对」的内容只是帮你看，批准只来自你。</small></span></li>
+    </ul>
+  </section>
+</main>
+<script type="module" src="index.mjs"></script>
+</body>
+</html>

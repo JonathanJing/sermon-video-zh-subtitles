@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>发布后确认 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="confirm">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>发布后确认</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="published-title">
+    <header><h2 id="published-title">已发布</h2></header>
+    <dl class="kv" id="published"></dl>
+    <p class="lead">上面是机器对线上文件做的核对。下面请你在自己的设备上打开看一遍：这是设备上的确认，和机器核对是两件事，也不代表现场使用的验收。</p>
+  </section>
+
+  <section class="card" aria-labelledby="locales-title">
+    <header><h2 id="locales-title">每种语言看一遍</h2></header>
+    <p class="lead">点链接打开页面，逐项选「正常」或「有问题」。没看的项目留着不选，收据会如实写成没检查。</p>
+    <div class="rows" id="locales"></div>
+  </section>
+
+  <section class="card" aria-labelledby="device-title">
+    <header><h2 id="device-title">这台设备</h2></header>
+    <dl class="kv" id="device"></dl>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>确认前核对</legend>
+      <label class="check"><input type="checkbox" data-check="thisDevice">
+        <span>是我亲自在这台设备上看到的<small>上面的结果来自我自己的操作，不是转述。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（报告问题时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">报告问题</button>
+    <button type="button" class="primary" id="approve">确认无误</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="confirm.mjs"></script>
+</body>
+</html>

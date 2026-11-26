@@ -1,0 +1,196 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l3.review.zh-Hans",
+ "kind": "track",
+ "production": "demo-20261129-sample",
+ "locale": "zh-Hans",
+ "title": "整轨听审",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T03:40:00+00:00",
+ "bindings": {
+  "trackWavSha256": "f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6",
+  "reviewMp3Sha256": "0707070707070707070707070707070707070707070707070707070707070707",
+  "sentencesJsonlSha256": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4",
+  "translationsJsonlSha256": "1818181818181818181818181818181818181818181818181818181818181818"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "locale": "zh-Hans",
+  "track": {
+   "audio": "review.mp3",
+   "seconds": 36.7,
+   "trackWavSha256": "f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6",
+   "reviewMp3Sha256": "0707070707070707070707070707070707070707070707070707070707070707",
+   "video": "dub-preview-640.mp4",
+   "voice": "示例讲员甲的授权声音，本机逐句合成"
+  },
+  "sync": {
+   "mode": "synced",
+   "maxLagSeconds": 3.4,
+   "over8s": 0
+  },
+  "rows": [
+   {
+    "id": "s0001",
+    "speaker": "示例讲员甲",
+    "start": 0.6,
+    "dur": 3.0,
+    "src": 3.8,
+    "lag": 0.2,
+    "english": "Good evening, everyone, and welcome.",
+    "target": "大家晚上好，欢迎各位。",
+    "spoken": "大家晚上好，欢迎各位。",
+    "flags": [],
+    "note": "",
+    "dub": "tts/s0001.wav",
+    "source": "slices/s0001.wav"
+   },
+   {
+    "id": "s0002",
+    "speaker": "示例讲员甲",
+    "start": 3.9,
+    "dur": 3.9,
+    "src": 7.4,
+    "lag": 0.2,
+    "english": "We are continuing our series tonight in chapter 21.",
+    "target": "今晚我们继续这个系列，来看第二十一章。",
+    "spoken": "今晚我们继续这个系列，来看第二十一章。",
+    "flags": [
+     "revised"
+    ],
+    "note": "",
+    "dub": "tts/s0002.wav",
+    "source": "slices/s0002.wav"
+   },
+   {
+    "id": "s0003",
+    "speaker": "示例讲员甲",
+    "start": 8.1,
+    "dur": 3.8,
+    "src": 11.7,
+    "lag": 0.2,
+    "english": "If you have a Bible, turn there with me.",
+    "target": "如果你带了圣经，请和我一起翻到那里。",
+    "spoken": "如果你带了圣经，请和我一起翻到那里。",
+    "flags": [],
+    "note": "",
+    "dub": "tts/s0003.wav",
+    "source": "slices/s0003.wav"
+   },
+   {
+    "id": "s0004",
+    "speaker": "示例讲员甲",
+    "start": 12.2,
+    "dur": 3.8,
+    "src": 15.5,
+    "lag": 0.2,
+    "english": "The writer says the city had twelve gates and twelve foundations.",
+    "target": "作者说，这城有十二个门，十二个根基。",
+    "spoken": "作者说，这城有十二个门，十二个根基。",
+    "flags": [
+     "note"
+    ],
+    "note": "数字读作「十二」",
+    "dub": "tts/s0004.wav",
+    "source": "slices/s0004.wav"
+   },
+   {
+    "id": "s0005",
+    "speaker": "示例讲员甲",
+    "start": 16.3,
+    "dur": 3.6,
+    "src": 20.5,
+    "lag": 0.2,
+    "english": "And I want you to notice who is at the center of it.",
+    "target": "我想请你留意，谁在这一切的中心。",
+    "spoken": "我想请你留意，谁在这一切的中心。",
+    "flags": [],
+    "note": "",
+    "dub": "tts/s0005.wav",
+    "source": "slices/s0005.wav"
+   },
+   {
+    "id": "s0006",
+    "speaker": "示例讲员甲",
+    "start": 20.2,
+    "dur": 3.0,
+    "src": 24.9,
+    "lag": 0.2,
+    "english": "It is not the walls, and it is not the gold.",
+    "target": "不是城墙，也不是黄金。",
+    "spoken": "不是城墙，也不是黄金。",
+    "flags": [],
+    "note": "",
+    "dub": "tts/s0006.wav",
+    "source": "slices/s0006.wav"
+   },
+   {
+    "id": "s0007",
+    "speaker": "示例讲员甲",
+    "start": 23.5,
+    "dur": 5.2,
+    "src": 28.9,
+    "lag": 3.4,
+    "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+    "target": "是那位使一切都更新的；从第一页到现在，整个故事一直指向他。",
+    "spoken": "是那位使一切都更新的；整个故事一直指向他。",
+    "flags": [
+     "condensed",
+     "speed",
+     "lag"
+    ],
+    "note": "",
+    "dub": "tts/s0007.wav",
+    "source": "slices/s0007.wav"
+   },
+   {
+    "id": "s0008",
+    "speaker": "示例讲员甲",
+    "start": 29.0,
+    "dur": 3.6,
+    "src": 42.7,
+    "lag": 0.2,
+    "english": "So what does that mean for a Monday morning?",
+    "target": "那么，这对星期一早上意味着什么？",
+    "spoken": "那么，这对星期一早上意味着什么？",
+    "flags": [],
+    "note": "",
+    "dub": "tts/s0008.wav",
+    "source": "slices/s0008.wav"
+   },
+   {
+    "id": "s0009",
+    "speaker": "示例讲员甲",
+    "start": 32.9,
+    "dur": 3.5,
+    "src": 46.7,
+    "lag": 0.2,
+    "english": "It means your ordinary work is not wasted.",
+    "target": "这意味着你平凡的工作没有白费。",
+    "spoken": "这意味着你平凡的工作没有白费。",
+    "flags": [
+     "speaker"
+    ],
+    "note": "",
+    "dub": "tts/s0009.wav",
+    "source": "slices/s0009.wav"
+   }
+  ]
+ },
+ "lastDecision": null
+}

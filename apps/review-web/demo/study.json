@@ -1,0 +1,247 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l4.study",
+ "kind": "study",
+ "production": "demo-20261129-sample",
+ "locale": null,
+ "title": "学习内容批准",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T03:40:00+00:00",
+ "bindings": {
+  "study.zh-Hans": "29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z2",
+  "study.ko": "29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k2",
+  "study.es": "29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e2",
+  "englishSourceJsonSha256": "4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "locales": [
+   {
+    "locale": "zh-Hans",
+    "draftedBy": "代理草稿，未经人工批准",
+    "outline": {
+     "sha256": "29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z29z2",
+     "sections": [
+      {
+       "title": "一、谁在中心",
+       "body": "这城的中心不是城墙和黄金，而是使一切更新的那一位。\n经文：示例书 1:1–10",
+       "sourceUnitIds": [
+        "u0004",
+        "u0007"
+       ],
+       "evidence": [
+        {
+         "id": "u0004",
+         "english": "The writer says the city had twelve gates and twelve foundations.",
+         "target": "作者说，这城有十二个门，十二个根基。"
+        },
+        {
+         "id": "u0007",
+         "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+         "target": "是那位使一切都更新的；从第一页到现在，整个故事一直指向他。"
+        }
+       ]
+      },
+      {
+       "title": "二、平凡的工作",
+       "body": "因为他要更新万有，今天平凡的工作没有白费。",
+       "sourceUnitIds": [
+        "u0009"
+       ],
+       "evidence": [
+        {
+         "id": "u0009",
+         "english": "It means your ordinary work is not wasted.",
+         "target": "这意味着你平凡的工作没有白费。"
+        }
+       ]
+      }
+     ]
+    },
+    "devotion": {
+     "sha256": "3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3az3",
+     "sections": [
+      {
+       "title": "默想",
+       "body": "这一周，哪一件平凡的事让你觉得白费？把它带到那位更新一切的面前。",
+       "sourceUnitIds": [
+        "u0007"
+       ],
+       "evidence": [
+        {
+         "id": "u0007",
+         "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+         "target": "是那位使一切都更新的；从第一页到现在，整个故事一直指向他。"
+        }
+       ]
+      },
+      {
+       "title": "祷告",
+       "body": "主啊，求你让我在平凡的工作里看见你的更新。",
+       "sourceUnitIds": [
+        "u0009"
+       ],
+       "evidence": []
+      }
+     ]
+    }
+   },
+   {
+    "locale": "ko",
+    "draftedBy": "代理草稿，未经人工批准",
+    "outline": {
+     "sha256": "29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k29k2",
+     "sections": [
+      {
+       "title": "1. 중심에 계신 분",
+       "body": "성의 중심은 성벽이나 금이 아니라 만물을 새롭게 하시는 분입니다.\n본문: 예시서 1:1-10",
+       "sourceUnitIds": [
+        "u0004",
+        "u0007"
+       ],
+       "evidence": [
+        {
+         "id": "u0004",
+         "english": "The writer says the city had twelve gates and twelve foundations.",
+         "target": null
+        },
+        {
+         "id": "u0007",
+         "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+         "target": null
+        }
+       ]
+      },
+      {
+       "title": "2. 평범한 일",
+       "body": "그분이 만물을 새롭게 하시기에 오늘의 평범한 일은 헛되지 않습니다.",
+       "sourceUnitIds": [
+        "u0009"
+       ],
+       "evidence": [
+        {
+         "id": "u0009",
+         "english": "It means your ordinary work is not wasted.",
+         "target": null
+        }
+       ]
+      }
+     ]
+    },
+    "devotion": {
+     "sha256": "3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3ak3",
+     "sections": [
+      {
+       "title": "묵상",
+       "body": "이번 주에 헛되다고 느낀 평범한 일은 무엇입니까?",
+       "sourceUnitIds": [
+        "u0007"
+       ],
+       "evidence": [
+        {
+         "id": "u0007",
+         "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+         "target": null
+        }
+       ]
+      },
+      {
+       "title": "기도",
+       "body": "주님, 평범한 일 속에서 주님의 새롭게 하심을 보게 하소서.",
+       "sourceUnitIds": [
+        "u0009"
+       ],
+       "evidence": []
+      }
+     ]
+    }
+   },
+   {
+    "locale": "es",
+    "draftedBy": "代理草稿，未经人工批准",
+    "outline": {
+     "sha256": "29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e29e2",
+     "sections": [
+      {
+       "title": "1. Quién está en el centro",
+       "body": "El centro de la ciudad no son los muros ni el oro, sino aquel que hace nuevas todas las cosas.\nPasaje: Libro de ejemplo 1:1-10",
+       "sourceUnitIds": [
+        "u0004",
+        "u0007"
+       ],
+       "evidence": [
+        {
+         "id": "u0004",
+         "english": "The writer says the city had twelve gates and twelve foundations.",
+         "target": null
+        },
+        {
+         "id": "u0007",
+         "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+         "target": null
+        }
+       ]
+      },
+      {
+       "title": "2. El trabajo ordinario",
+       "body": "Porque él renueva todo, el trabajo ordinario de hoy no se pierde.",
+       "sourceUnitIds": [
+        "u0009"
+       ],
+       "evidence": [
+        {
+         "id": "u0009",
+         "english": "It means your ordinary work is not wasted.",
+         "target": null
+        }
+       ]
+      }
+     ]
+    },
+    "devotion": {
+     "sha256": "3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3ae3",
+     "sections": [
+      {
+       "title": "Meditación",
+       "body": "¿Qué tarea ordinaria de esta semana te pareció en vano?",
+       "sourceUnitIds": [
+        "u0007"
+       ],
+       "evidence": [
+        {
+         "id": "u0007",
+         "english": "It is the one who makes all things new, and he is the one the whole story has been pointing to from the very first page until now.",
+         "target": null
+        }
+       ]
+      },
+      {
+       "title": "Oración",
+       "body": "Señor, ayúdame a ver tu renovación en mi trabajo ordinario.",
+       "sourceUnitIds": [
+        "u0009"
+       ],
+       "evidence": []
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "lastDecision": null
+}

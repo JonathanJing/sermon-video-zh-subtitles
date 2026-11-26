@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>发布授权 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="publish">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>发布授权</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="intent-title">
+    <header><h2 id="intent-title">这一次发布</h2></header>
+    <dl class="kv" id="intent"></dl>
+    <p class="lead">一个发布意图一批做完，计划内最多 3 次部署。授权只对下面列出的这几次部署有效；之后要改标题、文稿、音轨或字幕，就是新的发布意图，要重新授权。</p>
+  </section>
+
+  <section class="card" aria-labelledby="meta-title">
+    <header><h2 id="meta-title">页面上会显示什么</h2></header>
+    <dl class="kv" id="meta-facts"></dl>
+    <div class="grid-2" id="meta"></div>
+  </section>
+
+  <section class="card" aria-labelledby="pre-title">
+    <header><h2 id="pre-title">发布前条件</h2></header>
+    <p class="lead">这些是机器核对的结果，不是人工结论。有一项不过，就不能授权。</p>
+    <ul class="status-list" id="preconditions"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="deliverables-title">
+    <header><h2 id="deliverables-title">交付范围（七件套）</h2></header>
+    <ul class="status-list" id="deliverables"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="deploy-title">
+    <header><h2 id="deploy-title">部署计划</h2><span class="flag" id="deploy-count"></span></header>
+    <div class="rows" id="deployments"></div>
+  </section>
+
+  <section class="card" aria-labelledby="after-title">
+    <header><h2 id="after-title">发布之后自动做的事</h2></header>
+    <ul class="status-list" id="after"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>授权前逐项确认</legend>
+      <label class="check"><input type="checkbox" data-check="metadata">
+        <span>页面信息无误<small>三种语言的标题、系列、经文、讲员、日期和标注都对。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="reviewed">
+        <span>发布的是我审过的版本<small>英文表、三条音轨和译文都是我给过结论的那一版。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="deployments">
+        <span>授权这几次部署<small>只授权上面列出的部署，只属于这一个发布意图。</small></span></label>
+      <label class="check" id="other-pages-check"><input type="checkbox" data-check="otherPages">
+        <span>知道会改动其他页面<small>其中有部署会改到别的页面也在用的字段，内容见上面的说明。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（暂不发布时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">暂不发布</button>
+    <button type="button" class="primary" id="approve">授权发布</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="publish.mjs"></script>
+</body>
+</html>

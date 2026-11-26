@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>学习内容批准 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="study">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>学习内容批准</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="about-title">
+    <header><h2 id="about-title">大纲与默想</h2></header>
+    <p class="lead">每个正式页面都带本语言的大纲和默想。草稿由代理根据已批准的英文和定稿译文写成，只有你批准才会发布；不批准，页面就不带学习内容。每种语言单独给结论。</p>
+    <div class="tabs" id="tabs" role="tablist" aria-label="语言"></div>
+    <dl class="kv" id="locale-facts"></dl>
+  </section>
+
+  <section class="card" aria-labelledby="outline-title">
+    <header><h2 id="outline-title">大纲</h2></header>
+    <div class="rows" id="outline"></div>
+  </section>
+
+  <section class="card" aria-labelledby="devotion-title">
+    <header><h2 id="devotion-title">默想</h2></header>
+    <div class="rows" id="devotion"></div>
+  </section>
+
+  <section class="card" aria-labelledby="verdict-title">
+    <header><h2 id="verdict-title">这种语言的结论</h2></header>
+    <div class="seg" id="locale-verdict" role="group" aria-label="这种语言的结论">
+      <button type="button" data-verdict="approved" aria-pressed="false">批准这种语言</button>
+      <button type="button" data-verdict="changes_requested" aria-pressed="false">这种语言要修改</button>
+    </div>
+    <ul class="status-list" id="locale-status"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>批准前逐项确认</legend>
+      <label class="check"><input type="checkbox" data-check="faithful">
+        <span>内容都出自讲道<small>没有改经文，没有添加讲道里没有的论点；每一节都能在「依据」里找到出处。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="scripture">
+        <span>经文出处正确<small>书卷、章节和引文都对。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="terms">
+        <span>术语一致<small>系列名、人名和神学用词与术语表、当周译文一致。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（有语言要修改时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">有语言要修改</button>
+    <button type="button" class="primary" id="approve">批准全部语言</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="study.mjs"></script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-decision-v1.schema.json",
+  "title": "One decision a review page submits",
+  "description": "The page echoes the gate revision and bindings it showed. The receiver adds the reviewer identity and the time; a decision whose bindings no longer match the files is rejected as stale and approves nothing. A decision is not a receipt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "gateId",
+    "kind",
+    "production",
+    "locale",
+    "revision",
+    "bindings",
+    "verdict",
+    "checks",
+    "payload",
+    "note",
+    "idempotencyKey",
+    "client"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-decision-v1"
+    },
+    "gateId": {
+      "type": "string",
+      "pattern": "^l[0-9]\\.[A-Za-z0-9.-]+$"
+    },
+    "kind": {
+      "enum": [
+        "decisions",
+        "english",
+        "speakers",
+        "track",
+        "study",
+        "publish",
+        "confirm"
+      ]
+    },
+    "production": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "locale": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "bindings": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "verdict": {
+      "enum": [
+        "approved",
+        "changes_requested"
+      ]
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "payload": {
+      "type": "object"
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 64
+    },
+    "client": {
+      "type": "object",
+      "required": [
+        "submittedAt",
+        "userAgent"
+      ],
+      "properties": {
+        "submittedAt": {
+          "type": "string"
+        },
+        "userAgent": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "approved"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "additionalProperties": {
+              "const": true
+            }
+          }
+        }
+      }
+    }
+  ]
+}
