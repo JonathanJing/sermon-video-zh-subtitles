@@ -64,20 +64,26 @@ function render() {
   $("shown").textContent = `显示 ${list.length} / ${rows.length} 句`;
 }
 
+// After a repair, a reviewer who heard the earlier version in full (or all of its flagged sentences) only
+// has to hear what changed; the receipt says so ("changed_only") and names the earlier version.
+const changedOnly = () => Boolean(data.previous) && ["whole_track", "flagged_only"].includes(data.previous.listeningMode);
+
 function listening() {
   const summary = coverage.summary();
-  const flagged = rows.filter(r => r.flags.length);
-  const mode = reviewMode({ shareAt1x: summary.shareAt1x, flaggedIds: flagged.map(r => r.id),
+  const required = rows.filter(changedOnly() ? r => r.flags.some(flag => CHANGED.includes(flag)) : r => r.flags.length);
+  const mode = reviewMode({ shareAt1x: summary.shareAt1x, flaggedIds: required.map(r => r.id),
     heardIds: rows.filter(heard).map(r => r.id), declaredWholeTrackElsewhere: state.declared });
-  return { ...summary, mode: mode.mode, basis: mode.basis, flaggedSentences: flagged.length, flaggedUnheard: mode.missingFlagged.length,
+  return { ...summary, mode: changedOnly() && mode.mode === "flagged_only" ? "changed_only" : mode.mode, basis: mode.basis,
+    flaggedSentences: required.length, flaggedUnheard: mode.missingFlagged.length, requiredSet: changedOnly() ? "changed" : "flagged",
+    earlierRevision: changedOnly() ? { revision: data.previous.revision, mode: data.previous.listeningMode } : null,
     heardSentences: rows.filter(heard).length, declaredWholeTrackElsewhere: state.declared };
 }
 
 function renderCoverage() {
   const info = listening();
   $("coverage").value = info.shareAt1x;
-  const modeText = { whole_track: info.basis === "declared" ? "整轨（你的声明）" : "整轨", flagged_only: "只听标记",
-    partial: `还不够：有标记的 ${info.flaggedSentences} 句里还有 ${info.flaggedUnheard} 句没听` }[info.mode];
+  const modeText = { whole_track: info.basis === "declared" ? "整轨（你的声明）" : "整轨", flagged_only: "只听标记", changed_only: "只听这次改的（上一版已经听过）",
+    partial: `还不够：${info.requiredSet === "changed" ? "这次改的" : "有标记的"} ${info.flaggedSentences} 句里还有 ${info.flaggedUnheard} 句没听` }[info.mode];
   const other = info.heardSecondsAnySpeed - info.heardSecondsAt1x;
   $("coverage-text").textContent = `已按 1 倍速听 ${fmtClock(info.heardSecondsAt1x)} / ${fmtClock(info.trackSeconds)}（${Math.round(info.shareAt1x * 100)}%）`
     + `${other > 0 ? `，另有 ${fmtClock(other)} 是变速听的` : ""}。听审方式：${modeText}。`;
@@ -110,9 +116,9 @@ function collect(verdict) {
   const passed = rows.filter(r => verdictOf(r.id) === "pass").length;
   let blocked = null;
   if (issues.length) blocked = `有 ${issues.length} 句标了问题，不能直接通过；退回修改，或取消这些标记`;
-  else if (info.mode === "partial") blocked = `有标记的句子还有 ${info.flaggedUnheard} 句没听；听完它们或按 1 倍速听完整轨后才能通过`;
+  else if (info.mode === "partial") blocked = `${info.requiredSet === "changed" ? "这次改的" : "有标记的"}句子还有 ${info.flaggedUnheard} 句没听；听完它们或按 1 倍速听完整轨后才能通过`;
   const marks = Object.fromEntries(Object.entries(state.marks).filter(([, m]) => m.verdict || m.note).map(([id, m]) => [id, m]));
-  const modeText = { whole_track: info.basis === "declared" ? "整轨（你声明在别处听完）" : "整轨（页面测到）", flagged_only: "只听标记", partial: "不完整" }[info.mode];
+  const modeText = { whole_track: info.basis === "declared" ? "整轨（你声明在别处听完）" : "整轨（页面测到）", flagged_only: "只听标记", changed_only: "只听这次改的（上一版已经听过）", partial: "不完整" }[info.mode];
   return {
     blocked, hasIssues: issues.length > 0,
     payload: { locale: data.locale, rows: marks, issueIds: issues.map(r => r.id), listening: info },

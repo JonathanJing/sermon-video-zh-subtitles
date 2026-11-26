@@ -1016,6 +1016,7 @@ class Driver:
                 "sync": {"mode": "synced" if self.synced(record) else "independent", "maxLagSeconds": summary["maxLagSeconds"],
                          "over8s": summary["sentencesOverLag8s"]},
                 "previous": ({"revision": int(last["round"][1:]), "issues": last["issues"],
+                              "listeningMode": ((read_json(run / "repair" / f"issues-{last['round']}.json") or {}).get("listening") or {}).get("mode"),
                               **{key: [row["id"] for row in rows if row["flags"][:1] == [key]] for key in ("fixed", "rerendered", "unclear")}}
                              if last else None),
                 "rows": rows}
@@ -1038,17 +1039,22 @@ class Driver:
         if decision["bindings"] != self.track_hashes(run):
             raise StageError("stale", "音轨或译文在提交后变了")
         listening = decision["payload"].get("listening") or {}
+        rounds = [{"round": entry["round"], "decisionId": entry["decisionId"], "issues": entry["issues"], "rerenderedIds": entry.get("rerenderedIds") or [],
+                   "listening": (read_json(run / "repair" / f"issues-{entry['round']}.json") or {}).get("listening") or {}}
+                  for entry in (record.get("repairs") or {}).get(locale) or []]
+        mode = listening.get("mode")
+        if mode == "changed_only":
+            # only what changed was heard this time: the track as a whole was reviewed the way the version before the repair was heard
+            before = (rounds[-1]["listening"].get("mode") if rounds else None)
+            mode = before if before in ("whole_track", "flagged_only") else "partial"
         path = self.store.production_dir(record["production"]) / "reviews" / f"{locale}.json"
         review_gates.write_json(path, {
             "schemaVersion": "weekly-auto-track-review-v1", "locale": locale, "humanApproval": not record.get("rehearsal"),
             "rehearsal": bool(record.get("rehearsal")), **self.track_hashes(run),
             "trackSeconds": read_json(run / "schedule.json")["summary"]["trackSeconds"],
-            "reviewMode": listening.get("mode"), "reviewModeBasis": listening.get("basis"), "listening": listening,
+            "reviewMode": mode, "reviewModeBasis": listening.get("basis"), "listening": listening,
             "perSentence": decision["payload"].get("rows") or {}, "decisionId": item["decisionId"],
-            "earlierRounds": [{"round": entry["round"], "decisionId": entry["decisionId"], "issues": entry["issues"],
-                               "rerenderedIds": entry.get("rerenderedIds") or [],
-                               "listening": (read_json(run / "repair" / f"issues-{entry['round']}.json") or {}).get("listening") or {}}
-                              for entry in (record.get("repairs") or {}).get(locale) or []],
+            "earlierRounds": rounds,
             "reviewer": item["reviewer"], "approvedAt": item["receivedAt"],
             "authority": self.config["authorizations"]["pageDecisions"]})
         locales = self.kickoff(record)["decisions"]["locales"]

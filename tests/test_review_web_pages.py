@@ -121,3 +121,5 @@ def test_the_track_page_knows_every_flag_the_driver_puts_on_a_sentence():
     html = (WEB / "track.html").read_text(encoding="utf-8")
     assert 'data-filter="changed" aria-pressed="false" hidden' in html and 'id="previous" hidden' in html, "shown only for a repaired version"
     assert 'f === "changed"' in page and "row.fix.before" in page
+    # hearing only the changes is offered only after an earlier version that was heard properly
+    assert '["whole_track", "flagged_only"].includes(data.previous.listeningMode)' in page and '"changed_only"' in page

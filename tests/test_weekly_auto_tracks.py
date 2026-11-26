@@ -352,16 +352,21 @@ def test_a_track_sent_back_is_reworded_rendered_again_and_shown_again(make, tmp_
     assert rows["s0002"]["fix"] == {"asked": "这句不对，改成 那城有神的荣耀", "tags": ["译文"], "did": "照听审人写的改", "action": "retranslate",
                                     "before": rows["s0002"]["fix"]["before"]} and rows["s0002"]["fix"]["before"] != "那城有神的荣耀"
     assert rows["s0006"]["flags"][0] == "rerendered" and rows["s0006"]["fix"]["before"] is None and rows["s0001"]["flags"][0] == "rerendered" and "fix" not in rows["s0001"]
-    assert gate["data"]["previous"] == {"revision": 1, "issues": 2, "fixed": ["s0002"], "rerendered": ["s0001", "s0003", "s0004", "s0005", "s0006"], "unclear": []}
+    assert gate["data"]["previous"] == {"revision": 1, "issues": 2, "listeningMode": "whole_track", "fixed": ["s0002"],
+                                        "rerendered": ["s0001", "s0003", "s0004", "s0005", "s0006"], "unclear": []}
     titles = driver.notifier().titles()
     assert titles[-2:] == ["[同行] 已收到修改要求 · 中文音轨", "[同行] 可审 · 中文音轨"]
     # approving the second version: the receipt keeps how the first one was heard
-    for locale, mode in (("zh-Hans", "flagged_only"), ("ko", "whole_track"), ("es", "whole_track")):
+    # only what changed was heard this time; the earlier version was heard in full, and the receipt says both
+    for locale, mode in (("zh-Hans", "changed_only"), ("ko", "whole_track"), ("es", "whole_track")):
         approve_track(driver, locale, mode=mode)
     record = driver.advance(NAME)
     assert record["state"] == "tracks_ready"
     receipt = json.loads((tmp_path / "artifacts" / "weekly-auto" / NAME / "reviews" / "zh-Hans.json").read_text())
-    assert receipt["reviewMode"] == "flagged_only" and receipt["earlierRounds"][0]["listening"]["mode"] == "whole_track"
+    assert receipt["reviewMode"] == "whole_track" and receipt["listening"]["mode"] == "changed_only"
+    assert receipt["earlierRounds"][0]["listening"]["mode"] == "whole_track" and receipt["earlierRounds"][0]["round"] == "r1"
+    verdict = json.loads((tmp_path / "artifacts" / "sentence-first-agent" / f"{NAME}-review" / "human-review-verdict.json").read_text())
+    assert verdict["reviewMode"] == "whole_track" and verdict["locales"]["zh-Hans"]["trackWavSha256"] == receipt["trackWavSha256"]
     assert receipt["earlierRounds"][0]["rerenderedIds"] == ["s0001", "s0002", "s0003", "s0004", "s0005", "s0006"]
 
 
@@ -458,3 +463,15 @@ def test_another_render_on_the_machine_makes_dubbing_wait_not_fail(make, tmp_pat
     assert not [title for title in driver.notifier().titles() if "失败" in title or "内存" in title], "it ends by itself: nobody is called"
     record = driver.advance(NAME)
     assert record["stages"]["l3.tts.zh-Hans"]["state"] == "done" and record["stages"]["wait.tracks"]["state"] == "waiting"
+
+
+def test_hearing_only_the_changes_counts_only_when_the_earlier_version_was_heard_properly(make, tmp_path):
+    driver = to_track_reviews(make)
+    approve_track(driver, "ko", verdict="changes_requested", mode="partial", key="k" * 20, issueIds=["s0001"], rows={"s0001": mark("有杂音", "audio")})
+    driver.advance(NAME)
+    gate = driver.store.descriptor(NAME, "l3.review.ko", REVIEWER)
+    assert gate["revision"] == 2 and gate["data"]["previous"]["listeningMode"] == "partial"
+    approve_track(driver, "ko", mode="changed_only", key="l" * 20)      # a page would not offer this; the driver does not take its word
+    driver.advance(NAME)
+    receipt = json.loads((tmp_path / "artifacts" / "weekly-auto" / NAME / "reviews" / "ko.json").read_text())
+    assert receipt["reviewMode"] == "partial" and receipt["listening"]["mode"] == "changed_only"
