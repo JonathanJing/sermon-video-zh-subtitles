@@ -102,6 +102,16 @@
    "summary": "发布之后",
    "openedAt": null,
    "decidedAt": null
+  },
+  {
+   "gateId": "l4.poster",
+   "kind": "poster",
+   "locale": null,
+   "title": "海报",
+   "state": "pending",
+   "summary": "页面上线之后",
+   "openedAt": null,
+   "decidedAt": null
   }
  ]
 }

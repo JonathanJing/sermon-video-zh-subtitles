@@ -16,6 +16,8 @@ Steps keep the historical subcommand order:
   verify    GET/SHA every new asset and Range-check each MP3 on the live site
   stage2    stage1 + releases + appended catalogs (optionally the English reference)
   readback  compare the live catalogs/releases (and the English reference when staged)
+  stage-posters     a live baseline + this page's posters, announcement entries and binding receipts
+  readback-posters  compare those files on the live site with the staged ones
 
 Config paths are repository-relative unless absolute. The driver never writes
 translations/review/speech or the single-writer files; it reads them. Special repair
@@ -63,6 +65,7 @@ PUBLISH_EVIDENCE = {
     "validate": "E1", "preflight": "E2", "check-title": "E2", "publish-check": "E2",
     "assets": "E1", "baseline": "E1", "stage1": "E1", "stage2": "E1",
     "stage-english-reference": "E1", "publish": "E4", "verify": "E5", "readback": "E5",
+    "stage-posters": "E1", "readback-posters": "E5",
 }
 
 
@@ -1241,6 +1244,53 @@ def cmd_stage_english_reference(cfg: PageConfig, base: Path, out: Path) -> dict:
             "blocks": {locale: len(value["blocks"]) for locale, value in reference["targets"].items()}}
 
 
+def _poster_paths(cfg: PageConfig, folder: Path) -> list[str]:
+    """The files of one page's posters under a public directory: nothing else may ride this deployment."""
+    allowed = []
+    for path in sorted(p for p in folder.rglob("*") if p.is_file()):
+        rel = path.relative_to(folder).as_posix()
+        ok = (rel == "weekly-announcements-v1.json"
+              or (rel.startswith(f"posters/{cfg.page_id}/") and rel.endswith(".png"))
+              or (rel.startswith(f"announcement-binding-receipts/{cfg.page_id}-") and rel.endswith(".json")))
+        contract.require(ok, "Not a poster file of this page: " + rel)
+        allowed.append(rel)
+    return allowed
+
+
+def cmd_stage_posters(cfg: PageConfig, base: Path, overlay: Path, out: Path) -> dict:
+    """Stage the output of delivery.posters.announcement_sidecar (run per locale into `overlay`) on a live baseline.
+
+    The sidecar and this page's binding receipts may replace what is live (a rebind writes them again);
+    a poster image is content-addressed and is never overwritten.
+    """
+    paths = _poster_paths(cfg, overlay)
+    contract.require("weekly-announcements-v1.json" in paths, "overlay has no weekly-announcements-v1.json")
+    posters = [rel for rel in paths if rel.startswith("posters/")]
+    contract.require(len(posters) >= 1, "overlay has no poster image")
+    sidecar = json.loads((overlay / "weekly-announcements-v1.json").read_text(encoding="utf-8"))
+    mine = [item for item in sidecar.get("announcements", []) if item.get("pageID") == cfg.page_id]
+    contract.require(sorted(item.get("locale") for item in mine) == sorted(set(item.get("locale") for item in mine)) and mine,
+                     "sidecar has no announcement for this page")
+    live = base / "public" / "weekly-announcements-v1.json"
+    if live.is_file():                                      # every other page's announcement is carried over unchanged
+        before = [item for item in json.loads(live.read_text(encoding="utf-8")).get("announcements", []) if item.get("pageID") != cfg.page_id]
+        after = [item for item in sidecar["announcements"] if item.get("pageID") != cfg.page_id]
+        contract.require(before == after, "sidecar changes another page's announcement")
+    files = {rel: (overlay / rel).read_bytes() for rel in paths}
+    stage(cfg, base, out, None, files, replace=frozenset(rel for rel in paths if not rel.startswith("posters/")))
+    return {"staged": str(out), "changed": ["/" + rel for rel in paths], "posters": len(posters),
+            "announcements": {item["locale"]: item["poster"]["url"] for item in mine}}
+
+
+def cmd_readback_posters(cfg: PageConfig, snapshot: Path) -> dict:
+    changed = json.loads((snapshot / "staged-changes.json").read_text(encoding="utf-8"))["changedPaths"]
+    origin, results = cfg.origin(), {}
+    for path in changed:
+        status, data = reader(origin + path)
+        results[path] = status == 200 and hashlib.sha256(data).hexdigest() == sha_file(snapshot / "public" / path.lstrip("/"))
+    return {"ok": bool(results) and all(results.values()), "pass": bool(results) and all(results.values()), "checks": results}
+
+
 def cmd_readback(cfg: PageConfig, stage2: Path) -> dict:
     origin = cfg.origin()
     results = {}
@@ -1387,13 +1437,17 @@ def build_parser() -> argparse.ArgumentParser:
     readback = sub.add_parser("readback"); readback.add_argument("--stage2", type=Path, required=True)
     english = sub.add_parser("stage-english-reference")
     english.add_argument("--base", type=Path, required=True); english.add_argument("--out", type=Path, required=True)
+    posters = sub.add_parser("stage-posters", help="stage this page's posters and announcement entries on a live baseline")
+    posters.add_argument("--base", type=Path, required=True); posters.add_argument("--overlay", type=Path, required=True)
+    posters.add_argument("--out", type=Path, required=True)
+    sub.add_parser("readback-posters", help="compare the staged poster files with the live site").add_argument("--snapshot", type=Path, required=True)
     return parser
 
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     for name in ("out", "baseline", "assets", "snapshot", "stage1", "stage2", "evidence", "base",
-                 "cache_public", "cache_receipt"):
+                 "cache_public", "cache_receipt", "overlay"):
         value = getattr(args, name, None)
         if isinstance(value, Path):
             setattr(args, name, value.expanduser().resolve())
@@ -1437,6 +1491,10 @@ def main(argv=None) -> int:
                                 with_english=args.with_english)
         elif args.cmd == "stage-english-reference":
             result = cmd_stage_english_reference(cfg, args.base, args.out)
+        elif args.cmd == "stage-posters":
+            result = cmd_stage_posters(cfg, args.base, args.overlay, args.out)
+        elif args.cmd == "readback-posters":
+            result = cmd_readback_posters(cfg, args.snapshot)
         else:
             result = cmd_readback(cfg, args.stage2)
     except ValueError as exc:

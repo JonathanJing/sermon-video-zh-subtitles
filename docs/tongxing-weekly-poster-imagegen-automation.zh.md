@@ -1,6 +1,6 @@
 # 周海报主视觉：headless ImageGen 接入与设计流程合同
 
-状态：**2026-11-01 已接入 `delivery.posters.artwork`、`delivery.posters.design` 与 `delivery.posters.draft_design` 入口，未接入默认周更或 Supervisor**。本文记录一条可用的 `codex exec` → 内置 ImageGen 路径、已验证的边界，以及把「设计 → 主视觉 → 合成」接成流程所需的三段合同。它不改变[海报格式规范](tongxing-weekly-poster-format.zh.md)、不提升任何页面或海报状态，也不授权上传或发送。
+状态：**2026-11-01 已接入 `delivery.posters.artwork`、`delivery.posters.design` 与 `delivery.posters.draft_design` 入口，未接入默认周更或 Supervisor**。2026-11-26 起周六自动流程的驱动可以在页面上线后依次调用 `draft_design`、`design`、`artwork`、`build`，停在海报审核页，批准后绑定并上传（`tools/ops/weekly_auto_publish.py` 的海报阶段，`automation.poster` 默认关着；见[周六自动开工](weekly-auto-production.zh.md)）。本文记录一条可用的 `codex exec` → 内置 ImageGen 路径、已验证的边界，以及把「设计 → 主视觉 → 合成」接成流程所需的三段合同。它不改变[海报格式规范](tongxing-weekly-poster-format.zh.md)、不提升任何页面或海报状态，也不授权上传或发送。
 
 ## 结论先行
 

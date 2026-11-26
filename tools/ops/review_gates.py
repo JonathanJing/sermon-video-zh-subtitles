@@ -28,8 +28,8 @@ from pathlib import Path
 ROOT_NAME = Path("artifacts") / "weekly-auto"
 PRODUCTION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}")
 GATE_ID = re.compile(r"l[0-9]\.[A-Za-z0-9.-]{1,60}")
-KINDS = ("decisions", "english", "speakers", "track", "study", "publish", "confirm")
-ORDER = ("l0.decisions", "l1.english-review", "l1.speakers", "l3.review.", "l4.study", "l4.publish.authorization", "l4.device-confirm")
+KINDS = ("decisions", "english", "speakers", "track", "study", "publish", "confirm", "poster")
+ORDER = ("l0.decisions", "l1.english-review", "l1.speakers", "l3.review.", "l4.study", "l4.publish.authorization", "l4.device-confirm", "l4.poster")
 VERDICTS = ("approved", "changes_requested")
 MAX_NOTE = 4000
 

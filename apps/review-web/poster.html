@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>海报 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="poster">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>海报</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="page-title">
+    <header><h2 id="page-title">这一页</h2></header>
+    <dl class="kv" id="page-facts"></dl>
+    <p class="lead">海报上的标题、系列、经文、讲员和日期取自已经上线的页面，两个二维码由程序生成并解码核对过。主视觉是图像模型画的，概念由文字模型根据已发布的文稿起草：这两样都没有人看过，请你看。</p>
+  </section>
+
+  <section class="card" aria-labelledby="concept-title">
+    <header><h2 id="concept-title">主视觉的概念</h2></header>
+    <dl class="kv" id="concept"></dl>
+    <h3>依据的原文</h3>
+    <ul class="status-list" id="evidence"></ul>
+    <details>
+      <summary>没有选的概念</summary>
+      <ul class="status-list" id="other-concepts"></ul>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="candidates-title">
+    <header><h2 id="candidates-title">候选海报</h2><span class="small muted" id="round"></span></header>
+    <p class="lead">同一个概念画了几张主视觉，每张合成了三种语言。点图片看原尺寸。选一张，或者都不用。</p>
+    <div class="rows" id="candidates"></div>
+  </section>
+
+  <section class="card" aria-labelledby="after-title">
+    <header><h2 id="after-title">批准之后</h2></header>
+    <p class="lead" id="upload-note"></p>
+    <ul class="status-list" id="upload-files"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>批准前核对</legend>
+      <label class="check"><input type="checkbox" data-check="looked">
+        <span>我看过选中这一张的三种语言<small>画面里没有文字、人物和内容与这篇证道相符，标题、经文、日期没有错。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="upload">
+        <span>把选中的海报上传到站点<small>这就是上传的指示：三语海报进站点并出现在 App 的公告里。不会发到聊天或邮件。</small></span></label>
+    </fieldset>
+    <h3>都不用的话，接下来</h3>
+    <div class="seg" id="next" role="group" aria-label="退回后怎么做">
+      <button type="button" data-next="redraw" aria-pressed="true">同一个概念重画</button>
+      <button type="button" data-next="redesign" aria-pressed="false">换概念重新设计</button>
+      <button type="button" data-next="skip" aria-pressed="false">本周不发海报</button>
+    </div>
+    <label class="field"><span>备注（退回时必填：哪里不对）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">都不用</button>
+    <button type="button" class="primary" id="approve">批准并上传</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<script type="module" src="poster.mjs"></script>
+</body>
+</html>

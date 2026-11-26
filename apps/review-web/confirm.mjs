@@ -63,6 +63,9 @@ async function main() {
     h("dt", { text: "发布门禁" }), h("dd", { text: published.gate }),
     h("dt", { text: "浏览器冒烟" }), h("dd", { text: published.smoke }),
     h("dt", { text: "现场验收" }), h("dd", { text: "没有做，不在这一页的范围内" }));
+  const missing = data.notDelivered || [];          // what this publish intent left out: said here so nobody assumes it is live
+  $("not-delivered-block").hidden = !missing.length;
+  $("not-delivered").replaceChildren(...missing.map(text => h("li", {}, h("span", { class: "mark", text: "·" }), h("span", { text }))));
   const info = device();
   $("device").replaceChildren(
     h("dt", { text: "浏览器" }), h("dd", { class: "small", text: info.userAgent }),

@@ -234,6 +234,8 @@ def run():
     parser.add_argument('--art')
     parser.add_argument('--art-prompt')
     parser.add_argument('--visual-reviewed', action='store_true')
+    parser.add_argument('--visual-reviewer', help='With --visual-reviewed: the person who looked at these posters and where that is recorded '
+                                                 '(for example a review-page decision). Without it the review is recorded as an agent look, not a human approval.')
     args = parser.parse_args()
     release, out = Path(args.release).resolve(), Path(args.out).resolve()
     if out.is_relative_to(release) or release.is_relative_to(out):
@@ -304,7 +306,8 @@ def run():
         receipt.update(provenance=provenance, outputs=hashes, publicVerification=public_receipt,
                        status='complete' if args.visual_reviewed or receipt.get('status') == 'complete' else 'qr_verified_visual_review_pending')
         if args.visual_reviewed:
-            receipt.update(visualReview=dict(reviewer='codex', humanApproval=False),
+            receipt.update(visualReview=(dict(reviewer=args.visual_reviewer, humanApproval=True) if args.visual_reviewer
+                                         else dict(reviewer='codex', humanApproval=False)),
                            visualReviewedAt=datetime.datetime.now(datetime.timezone.utc).isoformat())
         write(receipt_path, receipt)
     write(out / 'poster-manifest.json', dict(schemaVersion='tongxing-poster-manifest-v1', templateVersion=TEMPLATE_VERSION, origin=origin, productionOrigin=production, artSha256=provenance['artSha256'], locales={loc:dict(receipt=str((out / loc / 'poster-receipt.json').relative_to(out)), contentLocale=b['source']['targetLocale'], announcementEligible=b['source'].get('announcementEligible',True)) for loc,b in bundles.items()}))

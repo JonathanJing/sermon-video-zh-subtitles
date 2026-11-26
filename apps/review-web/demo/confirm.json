@@ -77,6 +77,9 @@
     "label": "App 里能看到本页",
     "required": false
    }
+  ],
+  "notDelivered": [
+   "7. 统计目录：本周不交付，发布后手工补（补之前本页的收听统计不可用）"
   ]
  },
  "lastDecision": null

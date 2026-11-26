@@ -98,6 +98,10 @@ label.field > span { color: var(--muted); }
 
 /* Rows (sentences, checks, deliverables) */
 .rows { display: grid; gap: 8px; }
+.posters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.posters figure { margin: 0; display: grid; gap: 4px; }
+.posters img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); }
+.posters figcaption { font-size: 13px; color: var(--muted); text-align: center; }
 .row { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 6px; background: var(--surface); }
 .row.flagged { border-left: 4px solid var(--warning); }
 .row.issue { border-left: 4px solid var(--danger); }
