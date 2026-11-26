@@ -197,8 +197,11 @@ class Driver(weekly_auto_publish.PublishStages):
         review_gates.write_json(self.store.production_dir(record["production"]) / "outcome.json", {
             "schemaVersion": "weekly-auto-outcome-v1", "production": record["production"], "status": record.get("state"),
             "exitCode": 1 if failed else 0, "rehearsal": bool(record.get("rehearsal")),
-            "deliveryType": "test (rehearsal)" if record.get("rehearsal") else "four_layer_release, Layer 1 only",
-            "humanApproval": record.get("state") == "layer1_ready",
+            "deliveryType": "test (rehearsal)" if record.get("rehearsal") else "four_layer_release, " + {
+                "layer1": "Layer 1 only", "tracks": "Layers 1 to 3 (to the track reviews)", "publish": "Layers 1 to 4 (to the published page)"}[self.through(record)],
+            # true only once every review this production asked for has an applied human decision
+            "humanApproval": record.get("state") in ("layer1_ready", "tracks_ready", "published"),
+            "page": record.get("page"),
             "stages": {name: state.get("state") for name, state in record["stages"].items()}, "failedStages": failed,
             "notices": {"sent": len(record.get("notices", {})), "undelivered": len(record.get("outbox", {}))},
             "at": review_gates.now_iso()})
