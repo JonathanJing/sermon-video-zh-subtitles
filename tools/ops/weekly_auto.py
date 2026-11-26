@@ -770,9 +770,17 @@ def cmd_agents(driver: Driver, args) -> int:
             path = folder / f"{label}.plist"
             path.write_bytes(plistlib.dumps(plist))
             launch("bootout", f"{domain}/{label}")
-            result = launch("bootstrap", domain, str(path))
+            for _ in range(20):                                 # the old instance must be gone before the new one loads
+                if launch("print", f"{domain}/{label}").returncode != 0:
+                    break
+                time.sleep(0.25)
+            for attempt in range(3):
+                result = launch("bootstrap", domain, str(path))
+                if result.returncode == 0:
+                    break
+                time.sleep(1)
             if result.returncode != 0:
-                print(result.stderr.strip(), file=sys.stderr)
+                print(f"{label}: {result.stderr.strip()}", file=sys.stderr)
                 return 1
         print(json.dumps({"installed": sorted(plists), "port": port, "workRoot": str(driver.work_root), "reviewUrl": driver.review_base(),
                           "tailscaleServe": f"tailscale serve --bg --https={port} http://127.0.0.1:{port}"}, ensure_ascii=False, indent=1))
