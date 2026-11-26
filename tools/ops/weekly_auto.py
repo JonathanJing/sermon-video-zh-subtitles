@@ -68,6 +68,7 @@ STAGES = ("source.accept", "source.download", "source.derive", "gate.decisions",
           "l1.anchor", "l1.rows", "gate.english", "wait.review", "handoff")
 DELIVERABLES = ("页面 + 三语 assets（page/content/audio/captions）", "release 包", "目录（multilingual-v5/v4/v3）",
                 "英文对照 /english-reference/<pageId>.json", "现场对齐（sidecar + 每语指纹索引）", "研读手册条目", "统计目录")
+MAX_NOTICE_ATTEMPTS = 6
 NEXT_AFTER_ENGLISH = "翻译和配音（还没有自动化，按 runbook 从 sfa.py start 继续）"
 
 
@@ -214,13 +215,30 @@ class Driver:
                 return
             if built["linkMissing"]:
                 built["body"] += " 审核页地址暂时拿不到，请在生产机上查看。"
-            results = self.notifier().send(notices.to_message(built))
-            record["notices"][key] = {"at": review_gates.now_iso(), "event": event, "level": built["level"],
-                                      "delivered": notify.delivered(results) or bool(results.get("printed")),
-                                      "channels": sorted(name for name, ok in results.items() if ok)}
-            self.log(record["production"], "notice", key=key, level=built["level"], channels=record["notices"][key]["channels"])
+            self.deliver(record, key, built, 1)
         except Exception as exc:  # noqa: BLE001
             self.log(record["production"], "notice.failed", noticeEvent=event, error=type(exc).__name__)
+
+    def deliver(self, record: dict, key: str, built: dict, attempt: int) -> None:
+        """Send; a notice no channel took stays in the outbox and is tried again on the next run."""
+        results = self.notifier().send(notices.to_message(built))
+        delivered = notify.delivered(results) or bool(results.get("printed"))
+        record["notices"][key] = {"at": review_gates.now_iso(), "event": built["event"], "level": built["level"], "delivered": delivered,
+                                  "channels": sorted(name for name, ok in results.items() if ok), "attempts": attempt}
+        outbox = record.setdefault("outbox", {})
+        if delivered or attempt >= MAX_NOTICE_ATTEMPTS:
+            outbox.pop(key, None)
+        else:
+            outbox[key] = {**{name: built[name] for name in ("event", "level", "title", "body", "url")}, "attempts": attempt}
+        self.log(record["production"], "notice", key=key, level=built["level"], delivered=delivered,
+                 channels=record["notices"][key]["channels"], attempt=attempt)
+
+    def flush_outbox(self, record: dict) -> None:
+        for key, item in list(record.get("outbox", {}).items()):
+            try:
+                self.deliver(record, key, item, item["attempts"] + 1)
+            except Exception as exc:  # noqa: BLE001
+                self.log(record["production"], "notice.failed", noticeEvent=item.get("event"), error=type(exc).__name__)
 
     # ---- starting
     def start(self, trigger: dict, *, rehearsal: bool = False, production: str | None = None) -> dict:
@@ -627,6 +645,7 @@ class Driver:
             except BlockingIOError:
                 return self.store.production(production)          # another run of the driver has it
             record = self.store.production(production)
+            self.flush_outbox(record)
             self.apply_decisions(record)
             for stage in STAGES:
                 state = record["stages"].get(stage, {})
@@ -687,12 +706,13 @@ def cmd_pending(driver: Driver, args) -> int:
     return 0
 
 
-def agent_plists(work_root: Path, port: int, python: str) -> dict[str, dict]:
+def agent_plists(work_root: Path, port: int, python: str, allow_host: str | None = None) -> dict[str, dict]:
     common = {"RunAtLoad": True, "EnvironmentVariables": {"PATH": AGENT_PATH}, "WorkingDirectory": str(ROOT)}
     here = Path(__file__).resolve().parent
     return {
         LABEL_REVIEW: {**common, "Label": LABEL_REVIEW, "KeepAlive": True,
-                       "ProgramArguments": [python, str(here / "review_gate_server.py"), "serve", "--work-root", str(work_root), "--port", str(port)],
+                       "ProgramArguments": [python, str(here / "review_gate_server.py"), "serve", "--work-root", str(work_root), "--port", str(port),
+                                            *(["--allow-host", allow_host] if allow_host else [])],
                        "StandardOutPath": str(SUPPORT / "review.log"), "StandardErrorPath": str(SUPPORT / "review.log")},
         LABEL_DRIVER: {**common, "Label": LABEL_DRIVER, "WatchPaths": [str(TRIGGERS)], "StartInterval": 300,
                        "ProgramArguments": ["/usr/bin/caffeinate", "-i", python, str(here / "weekly_auto.py"), "--work-root", str(work_root), "pending"],
@@ -702,7 +722,10 @@ def agent_plists(work_root: Path, port: int, python: str) -> dict[str, dict]:
 
 def cmd_agents(driver: Driver, args) -> int:
     port = args.port or driver.local.get("port") or driver.config["review"]["port"]
-    plists = agent_plists(driver.work_root, port, driver.python)
+    # The tailnet name is read here, by the person installing, and written into this Mac's own files:
+    # a LaunchAgent cannot always ask Tailscale for it at start.
+    host = tailnet_name() or driver.local.get("reviewHost")
+    plists = agent_plists(driver.work_root, port, driver.python, host)
     domain = f"gui/{os.getuid()}"
     launch = lambda *a: subprocess.run(["/bin/launchctl", *a], capture_output=True, text=True, check=False)
     folder = Path.home() / "Library" / "LaunchAgents"
@@ -711,7 +734,9 @@ def cmd_agents(driver: Driver, args) -> int:
     elif args.action == "install":
         SUPPORT.mkdir(parents=True, exist_ok=True)
         TRIGGERS.mkdir(parents=True, exist_ok=True)
-        review_gates.write_json(SUPPORT / "local.json", {**driver.local, "workRoot": str(driver.work_root), "port": port, "python": driver.python})
+        driver.local = {**driver.local, "workRoot": str(driver.work_root), "port": port, "python": driver.python,
+                        **({"reviewHost": host, "reviewBaseUrl": f"https://{host}:{port}"} if host else {})}
+        review_gates.write_json(SUPPORT / "local.json", driver.local)
         for label, plist in plists.items():
             path = folder / f"{label}.plist"
             path.write_bytes(plistlib.dumps(plist))

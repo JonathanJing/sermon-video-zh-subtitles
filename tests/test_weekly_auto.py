@@ -349,6 +349,28 @@ def test_one_reminder_after_the_waiting_time(driver, monkeypatch):
     assert gate["revision"] == 1
 
 
+def test_a_notice_no_channel_took_is_sent_again_on_the_next_run(driver):
+    class Flaky(Notifier):
+        fail = 2
+
+        def send(self, message):
+            self.messages.append(message)
+            if Flaky.fail:
+                Flaky.fail -= 1
+                return {"bark-iphone": False, "email": False}
+            return {"bark-iphone": True}
+
+    driver._notifier = Flaky()
+    record = start(driver)                       # started + kickoff notice both fail, the English one is delivered
+    assert sorted(record["outbox"]) == ["gate.opened:20261121-sermon:l0.decisions:-", "production.started:20261121-sermon:-:-"]
+    assert record["notices"]["gate.opened:20261121-sermon:l1.english-review:1"]["delivered"] is True
+    again = driver.advance("20261121-sermon")
+    assert again["outbox"] == {} and len(driver.notifier().messages) == 5
+    kickoff = again["notices"]["gate.opened:20261121-sermon:l0.decisions:-"]
+    assert (kickoff["delivered"], kickoff["attempts"]) == (True, 2)
+    assert len(driver.advance("20261121-sermon")["notices"]) == 3 and len(driver.notifier().messages) == 5
+
+
 def test_pending_starts_each_trigger_once(driver, tmp_path, capsys):
     folder = tmp_path / "triggers"
     folder.mkdir()
@@ -361,10 +383,11 @@ def test_pending_starts_each_trigger_once(driver, tmp_path, capsys):
 
 
 def test_launch_agents_run_the_service_and_the_driver_from_this_checkout(driver, tmp_path):
-    plists = weekly_auto.agent_plists(tmp_path, 8444, "/venv/bin/python")
+    plists = weekly_auto.agent_plists(tmp_path, 8444, "/venv/bin/python", "mac.tailnet-name.ts.net")
     review, drive = plists[weekly_auto.LABEL_REVIEW], plists[weekly_auto.LABEL_DRIVER]
     assert review["KeepAlive"] is True and review["ProgramArguments"][1].endswith("tools/ops/review_gate_server.py")
-    assert review["ProgramArguments"][2:] == ["serve", "--work-root", str(tmp_path), "--port", "8444"]
+    assert review["ProgramArguments"][2:] == ["serve", "--work-root", str(tmp_path), "--port", "8444", "--allow-host", "mac.tailnet-name.ts.net"]
+    assert "--allow-host" not in weekly_auto.agent_plists(tmp_path, 8444, "/venv/bin/python")[weekly_auto.LABEL_REVIEW]["ProgramArguments"]
     assert drive["WatchPaths"] == [str(weekly_auto.TRIGGERS)] and drive["StartInterval"] == 300
     assert drive["ProgramArguments"][:2] == ["/usr/bin/caffeinate", "-i"] and drive["ProgramArguments"][-1] == "pending"
     assert "/opt/homebrew/bin" in drive["EnvironmentVariables"]["PATH"]
