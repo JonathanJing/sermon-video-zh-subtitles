@@ -105,7 +105,10 @@ def clock_text(seconds: float) -> str:
 # ---------------------------------------------------------------- weekly budget ledger
 
 class Budget:
-    """One file per ISO week: what paid work was reserved, what it cost, what is still unknown."""
+    """One file per ISO week: what paid work was reserved, what it cost, what is still unknown.
+
+    The week is the week the money is spent in (Pacific time), not the week the sermon belongs to:
+    a rehearsal or a late rerun of an older file counts against this week's cap."""
 
     def __init__(self, work_root: Path, cap_usd: float, when: dt.date):
         year, week, _ = when.isocalendar()
@@ -148,13 +151,13 @@ class Budget:
 class Driver:
     def __init__(self, work_root: Path, *, config_path: Path = CONFIG, push: bool = True, local: dict | None = None,
                  run=subprocess.run, opener=urllib.request.urlopen, notifier=None, python: str | None = None,
-                 sleep=time.sleep):
+                 sleep=time.sleep, today=lambda: dt.datetime.now(TZ).date()):
         self.work_root = Path(work_root).resolve()
         self.config_path = Path(config_path)
         self.config = json.loads(self.config_path.read_text(encoding="utf-8"))
         self.local = local if local is not None else read_json(SUPPORT / "local.json", {})
         self.store = review_gates.Store(self.work_root)
-        self.run_command, self.opener, self.push, self.sleep = run, opener, push, sleep
+        self.run_command, self.opener, self.push, self.sleep, self.today = run, opener, push, sleep, today
         self.python = python or self.local.get("python") or sys.executable
         self._notifier = notifier
 
@@ -463,7 +466,7 @@ class Driver:
         return "done"
 
     def budget(self, record: dict) -> Budget:
-        return Budget(self.work_root, self.config["budget"]["weeklyCapUsd"], dt.date.fromisoformat(record["saturday"]))
+        return Budget(self.work_root, self.config["budget"]["weeklyCapUsd"], self.today())
 
     def stage_l1_transcribe(self, record: dict) -> str:
         layer1 = self.source_run(record) / "layer1"

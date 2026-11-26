@@ -105,7 +105,8 @@ def driver(tmp_path):
     path.write_text(json.dumps(config))
     (tmp_path / "artifacts" / "model-routing" / "macbook-tts" / "checkpoint-75d28").mkdir(parents=True)
     return weekly_auto.Driver(tmp_path, config_path=path, local={"reviewBaseUrl": BASE}, run=Run(), opener=Opener(),
-                              notifier=Notifier(), python=sys.executable, sleep=lambda seconds: None)
+                              notifier=Notifier(), python=sys.executable, sleep=lambda seconds: None,
+                              today=lambda: dt.date(2026, 11, 25))
 
 
 def start(driver, **kwargs):
@@ -167,7 +168,9 @@ def test_a_new_file_runs_by_itself_up_to_the_two_review_steps(driver, tmp_path):
 
 def test_transcription_is_reserved_settled_and_goes_through_the_launcher(driver, tmp_path):
     start(driver)
-    ledger = json.loads(next((tmp_path / "artifacts/weekly-auto/budget").glob("openai-2026-W47.json")).read_text())
+    ledgers = sorted(path.name for path in (tmp_path / "artifacts/weekly-auto/budget").iterdir())
+    assert ledgers == ["openai-2026-W48.json"], "the week the money is spent in (2026-11-25), not the sermon's week (W47)"
+    ledger = json.loads((tmp_path / "artifacts/weekly-auto/budget/openai-2026-W48.json").read_text())
     entry = ledger["entries"][0]
     assert (entry["state"], entry["stage"], ledger["capUsd"]) == ("settled", "l1.transcribe", 50)
     assert entry["reservedUsd"] == round(26.0 / 60 * 0.006 * 4, 4) and 0 < entry["actualUsd"] < entry["reservedUsd"]
