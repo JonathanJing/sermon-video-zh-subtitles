@@ -581,12 +581,13 @@ class Driver:
             if gate["state"] != "open" or not gate.get("openedAt"):
                 continue
             opened = dt.datetime.fromisoformat(gate["openedAt"])
-            sent = record.setdefault("reminders", {}).get(gate["gateId"], 0)
+            key = gate["gateId"] if gate["revision"] == 1 else f"{gate['gateId']}#r{gate['revision']}"      # a new version waits anew
+            sent = record.setdefault("reminders", {}).get(key, 0)
             if notices.reminder_due(gate["kind"], opened, now, sent):
                 waited = int((now - opened).total_seconds() // 60)
                 self.notice(record, "gate.reminder", kind=gate["kind"], gate_id=gate["gateId"], locale=gate.get("locale"),
                             once=f"reminder:{gate['gateId']}:{gate['revision']}", waited=f"{waited} 分钟" if waited < 120 else f"{waited // 60} 小时")
-                record["reminders"][gate["gateId"]] = sent + 1
+                record["reminders"][key] = sent + 1
         reworking = [gate["title"] for gate in waiting if gate["state"] in ("changes_requested", "stale")]
         self.worker(record, "等修改后重出" if reworking and len(reworking) == len(waiting) else "等你审核",
                     "、".join(gate["title"] + (f"（{notices.LOCALE_NAMES.get(gate['locale'], gate['locale'])}）" if gate.get("locale") else "") for gate in waiting),

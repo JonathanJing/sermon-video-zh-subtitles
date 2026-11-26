@@ -475,3 +475,14 @@ def test_hearing_only_the_changes_counts_only_when_the_earlier_version_was_heard
     driver.advance(NAME)
     receipt = json.loads((tmp_path / "artifacts" / "weekly-auto" / NAME / "reviews" / "ko.json").read_text())
     assert receipt["reviewMode"] == "partial" and receipt["listening"]["mode"] == "changed_only"
+
+
+def test_a_version_opened_again_gets_its_own_reminder(make, tmp_path, monkeypatch):
+    driver = to_track_reviews(make)
+    monkeypatch.setattr(weekly_auto.notices, "reminder_due", lambda kind, at, now, sent: kind == "track" and sent == 0)
+    driver.advance(NAME)                                    # the first versions of all three have waited long enough
+    approve_track(driver, "es", verdict="changes_requested", key="m" * 20, issueIds=["s0002"], rows={"s0002": mark("改成 otra", "translation")})
+    record = driver.advance(NAME)
+    record = driver.advance(NAME)
+    reminders = [title for title in driver.notifier().titles() if title == "[同行] 还在等你 · 西班牙语音轨"]
+    assert len(reminders) == 2 and record["reminders"]["l3.review.es"] == 1 and record["reminders"]["l3.review.es#r2"] == 1
