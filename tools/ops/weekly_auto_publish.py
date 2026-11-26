@@ -643,7 +643,7 @@ class PosterStages:
                       "artSha256": decision["payload"].get("artSha256"), "bindings": decision["bindings"], "humanApproval": True,
                       "uploadInstruction": "the approval on the poster page (user decision 2026-11-26: approving a poster there is the instruction to upload it)",
                       "decisionId": item["decisionId"], "approvedBy": item["reviewer"], "approvedAt": item["receivedAt"],
-                      "authority": self.config["authorizations"]["pageDecisions"]})
+                      "authority": self.config["authorizations"].get("posterUpload") or self.config["authorizations"]["pageDecisions"]})
         state.update(choice=choice, approval=item["decisionId"])
         return _sha(path), "上传海报"
 

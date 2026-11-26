@@ -28,7 +28,9 @@
   },
   "automation": {
     "through": "publish",
-    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews. publish: after the track reviews also prepare the page, ask for authorization on the publish page, make the two deployments, run the publish gate and ask for the device confirmation (rehearsed on the Dev site 2026-11-26 with last week's published page). A rehearsal never publishes."
+    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews. publish: after the track reviews also prepare the page, ask for authorization on the publish page, make the two deployments, run the publish gate and ask for the device confirmation (rehearsed on the Dev site 2026-11-26 with last week's published page). A rehearsal never publishes. poster: after the page is live also draft, draw and compose the week's posters and ask on the poster page which one to upload (off until its upload has been rehearsed).",
+    "poster": false,
+    "posterCandidates": 2
   },
   "transcription": {
     "environment": "prod",
@@ -95,6 +97,12 @@
       "grantedAt": "2026-11-26",
       "statement": "Dev 演练通过就开自动发布",
       "scope": "After the three track reviews the driver prepares the page and opens the publish authorization page. Nothing is deployed before the reviewer authorizes that publish intent there (pageDecisions); the authorization covers exactly the deployments the page lists. Covers the page, releases, catalogs, English reference and live-audio alignment. Does not cover the study guide entry, the statistics catalog, study content or posters."
+    },
+    "posterUpload": {
+      "grantedBy": "user (answer in the Claude session)",
+      "grantedAt": "2026-11-26",
+      "statement": "算，批准即上传",
+      "scope": "Approving one candidate on the poster review page is the instruction to upload that week's posters and announcement entries to the site. Nothing is uploaded before that approval, and nothing is sent to chat or email."
     }
   }
 }
