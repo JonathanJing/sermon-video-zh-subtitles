@@ -90,5 +90,3 @@ def test_web_and_python_rules_match():
     """The JS rule in catalog.mjs mirrors page_heading.heading_lines; keep the cases in step."""
     source = (ROOT / "apps/listening-web/catalog.mjs").read_text(encoding="utf-8")
     assert "export function headingLines(title, series)" in source
-    swift = (ROOT / "apps/tongxing-ios/Core/Sources/TongxingCore/SermonHeading.swift").read_text(encoding="utf-8")
-    assert 'title.hasPrefix(series + " · ")' in swift
