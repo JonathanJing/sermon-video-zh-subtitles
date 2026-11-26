@@ -43,7 +43,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Sunday translate.pastors.ai capture, human sermon window, translated reading PDF | [Live translate capture runbook](experiments/live-translate-capture/AGENTS.md) |
 | Translation quality comparison: pastors.ai Chinese vs our production Chinese | [Comparison runbook](experiments/translation-quality-comparison/AGENTS.md) |
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
-| Automatic Saturday start on the production Mac (Drive file through English approval to the three track reviews) | [Weekly auto production](docs/weekly-auto-production.zh.md): what is installed, the rules it keeps, its limits, what to do on each failure notice |
+| Automatic Saturday start on the production Mac (Drive file through the track reviews to the published page) | [Weekly auto production](docs/weekly-auto-production.zh.md): what is installed, the rules it keeps, its limits, what to do on each failure notice |
 | Human review step: its page, its decision, its Bark and email notices | [Review pages and notices](docs/design/review-gates-and-notifications.zh.md): one page per step in `apps/review-web/`, the decision contract, and the notice for every state (`tools/ops/production_notices.py list`) |
 | Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 tools/development/backlog_ids.py <ID or prefix>` |
 | Benchmark, model trial or post-training | README Discovery links and that experiment's contract |

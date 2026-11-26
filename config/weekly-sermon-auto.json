@@ -27,8 +27,8 @@
     "titleTable": "docs/series-sermon-titles.zh.md"
   },
   "automation": {
-    "through": "tracks",
-    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews (rehearsed on the production Mac 2026-11-25 with a 40-sentence clip)."
+    "through": "publish",
+    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews. publish: after the track reviews also prepare the page, ask for authorization on the publish page, make the two deployments, run the publish gate and ask for the device confirmation (rehearsed on the Dev site 2026-11-26 with last week's published page). A rehearsal never publishes."
   },
   "transcription": {
     "environment": "prod",
@@ -89,6 +89,12 @@
       "grantedAt": "2026-11-25",
       "statement": "应当调用Opus口语化译文，达不到效果，再用Opus精简译文。",
       "scope": "When a dubbed track cannot keep up with the video after silence trimming and per-sentence speed-up: Opus rewrites the lagging sentences colloquially, and only if that is not enough Opus condenses them. DeepSeek is not used for this."
+    },
+    "autoPublish": {
+      "grantedBy": "user (answer in the Claude session)",
+      "grantedAt": "2026-11-26",
+      "statement": "Dev 演练通过就开自动发布",
+      "scope": "After the three track reviews the driver prepares the page and opens the publish authorization page. Nothing is deployed before the reviewer authorizes that publish intent there (pageDecisions); the authorization covers exactly the deployments the page lists. Covers the page, releases, catalogs, English reference and live-audio alignment. Does not cover the study guide entry, the statistics catalog, study content or posters."
     }
   }
 }
