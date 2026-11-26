@@ -105,8 +105,9 @@ export function renderState(gate) {
   const [title, detail] = STATE_TEXT[gate.state] || [gate.state, ""];
   const rehearsal = Boolean(gate.labels && gate.labels.rehearsal);
   strip.dataset.state = gate.state;
+  const shown = rehearsal && gate.state === "applied" ? "本机已核对哈希并生成演练文件。" : detail;
   strip.replaceChildren(h("strong", { text: `${demo ? "演示 · " : ""}${rehearsal ? "演练 · " : ""}${title}` }),
-    rehearsal ? `${detail} 这是演练：提交的决定不产生任何人工批准。` : detail);
+    rehearsal ? `${shown} 这是演练：提交的决定不产生任何人工批准。` : shown);
 }
 
 function renderShell(gate) {
