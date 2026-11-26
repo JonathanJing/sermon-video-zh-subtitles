@@ -294,7 +294,8 @@ def test_the_code_and_the_artifacts_must_share_a_checkout(make):
 
 def test_the_shipped_config_runs_through_publishing_and_names_the_decisions_it_rests_on():
     config = json.loads((ROOT / "config" / "weekly-sermon-auto.json").read_text(encoding="utf-8"))
-    assert config["automation"]["through"] == "publish"
+    assert config["automation"]["through"] == "publish" and config["automation"]["poster"] is True
+    assert config["authorizations"]["posterUpload"]["statement"] == "算，批准即上传" and "周六打开海报" in config["authorizations"]["posterUpload"]["enabledBy"]
     assert config["authorizations"]["autoPublish"]["statement"] == "Dev 演练通过就开自动发布" and "Nothing is deployed before" in config["authorizations"]["autoPublish"]["scope"]
     assert config["authorizations"]["syncRewrite"]["statement"] == "应当调用Opus口语化译文，达不到效果，再用Opus精简译文。"
 
