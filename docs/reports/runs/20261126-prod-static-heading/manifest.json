@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261126-prod-static-heading",
+  "runs": [
+    {
+      "label": "podcast",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-header-align-20261126/podcast",
+      "skipped": {
+        ".json": 827,
+        ".js": 34,
+        "(none)": 3,
+        ".mjs": 99,
+        ".png": 174,
+        ".svg": 9,
+        ".srt": 6,
+        ".mp3": 270,
+        ".pdf": 12,
+        ".html": 168,
+        ".jpg": 3,
+        ".css": 9,
+        ".lock": 2
+      }
+    },
+    {
+      "label": "sermon",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-header-align-20261126/sermon",
+      "skipped": {
+        ".json": 828,
+        ".js": 34,
+        "(none)": 3,
+        ".mjs": 99,
+        ".png": 174,
+        ".svg": 9,
+        ".srt": 6,
+        ".mp3": 270,
+        ".pdf": 12,
+        ".html": 168,
+        ".jpg": 3,
+        ".css": 9,
+        ".lock": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "podcast",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 207293,
+      "truncated": false,
+      "sha256": "2bb0f33ab85f33fd1e8c914ef852b1fff1499662355cc35324f42466f520f243",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "publish-gate.json",
+      "kind": "whole",
+      "bytes": 11176,
+      "truncated": false,
+      "sha256": "755456c72193e5be5d717cb57e863c5ccf22357657ed90b6ccc37163b3edf98d",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "smoke-final-es.json",
+      "kind": "whole",
+      "bytes": 7086,
+      "truncated": false,
+      "sha256": "b194c6f01f96252174b6d694178f4902325d844fa1f25e37788860764268d391",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "smoke-final-ko.json",
+      "kind": "whole",
+      "bytes": 7117,
+      "truncated": false,
+      "sha256": "6bb203a16b82ac5a7902f7c9b34fc693e26ce4a776240492351b6f7836fc8de3",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "smoke-final-zh-Hans.json",
+      "kind": "whole",
+      "bytes": 7012,
+      "truncated": false,
+      "sha256": "651759ddf87b4cea9d9c85dd2f2a4c01a4753676dc3074965b9c7920b57140b5",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "snapshot-a/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 207293,
+      "truncated": false,
+      "sha256": "2bb0f33ab85f33fd1e8c914ef852b1fff1499662355cc35324f42466f520f243",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "snapshot-a/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "556feea3d5dcaa8612ad14000b37a54ad4559a3eeadd50aa9abf397e91f4b16f",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "snapshot-a/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "snapshot-b/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 207293,
+      "truncated": false,
+      "sha256": "2bb0f33ab85f33fd1e8c914ef852b1fff1499662355cc35324f42466f520f243",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "snapshot-b/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "b377bece51c05bf1ab5a2fd0f66b193b948846fcc0580c9a49b9c8c822641bf8",
+      "redactions": {}
+    },
+    {
+      "run": "podcast",
+      "path": "snapshot-b/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 207223,
+      "truncated": false,
+      "sha256": "dca19044269bd612b3ecf586ae331802735b42f05770d2027c58611c4c373987",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "publish-gate.json",
+      "kind": "whole",
+      "bytes": 16165,
+      "truncated": false,
+      "sha256": "28f7730606309ad460baf48910a9df3dc4e761d3e755ed498d0c2acf0a4b8d47",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "smoke-final-es.json",
+      "kind": "whole",
+      "bytes": 6277,
+      "truncated": false,
+      "sha256": "896146df576958e430249af94cbd9ee07fbe20c93ab394224893d7e18656924f",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "smoke-final-ko.json",
+      "kind": "whole",
+      "bytes": 6275,
+      "truncated": false,
+      "sha256": "d139fb3cd3c92af9e986aca522a52f095866ae5732c3a2dea3d363155e5314f8",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "smoke-final-zh-Hans.json",
+      "kind": "whole",
+      "bytes": 6313,
+      "truncated": false,
+      "sha256": "7b36ee02dfabdb3c6656997f68872ce37888cf089a33bcf40133cabbd849f4d4",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "snapshot-a/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 207223,
+      "truncated": false,
+      "sha256": "dca19044269bd612b3ecf586ae331802735b42f05770d2027c58611c4c373987",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "snapshot-a/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "40f58cbccc34621344a9b064131e74839e8765adb5ba6135e7d1cb9ca4d23173",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "snapshot-a/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "snapshot-b/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 207223,
+      "truncated": false,
+      "sha256": "dca19044269bd612b3ecf586ae331802735b42f05770d2027c58611c4c373987",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "snapshot-b/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "23a972d0f1e99a7d9b553e50bbf002bd5f0417de260ed0cf724098bb5dc2e025",
+      "redactions": {}
+    },
+    {
+      "run": "sermon",
+      "path": "snapshot-b/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

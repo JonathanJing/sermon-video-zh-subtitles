@@ -1,0 +1,629 @@
+{
+  "schemaVersion": "sentence-first-publish-gate-v1",
+  "checkedAt": "2026-11-26T16:12:55.946993+00:00",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "pageId": "revelation-jesus-will-return-20261122",
+  "catalogSha256": "37d9e9ccfba44dbc8d19fb95b2f6ccea84080a9394980624677f7c9769e709b6",
+  "status": "pass",
+  "failed": [],
+  "checks": [
+    {
+      "check": "catalog.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /multilingual-v5.json -> 200"
+    },
+    {
+      "check": "catalog.schema",
+      "ok": true,
+      "required": true,
+      "detail": "schema=sermon-multilingual-catalog-v5"
+    },
+    {
+      "check": "catalog.page",
+      "ok": true,
+      "required": true,
+      "detail": "pages with id revelation-jesus-will-return-20261122: 1"
+    },
+    {
+      "check": "catalog.defaultPageId",
+      "ok": true,
+      "required": true,
+      "detail": "defaultPageId=revelation-jesus-will-return-20261122 expected latest sermon revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "catalog.locales",
+      "ok": true,
+      "required": true,
+      "detail": "targets=['es', 'ko', 'zh-Hans']"
+    },
+    {
+      "check": "catalog.title",
+      "ok": true,
+      "required": true,
+      "detail": "title='耶稣必再来'"
+    },
+    {
+      "check": "reference.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /english-reference/revelation-jesus-will-return-20261122.json -> 200"
+    },
+    {
+      "check": "reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "schema=sermon-published-english-reference-v1 review=human_approved"
+    },
+    {
+      "check": "reference.locales",
+      "ok": true,
+      "required": true,
+      "detail": "targets=['es', 'ko', 'zh-Hans']"
+    },
+    {
+      "check": "es.release.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /releases-v2/revelation-jesus-will-return-20261122/es.json -> 200"
+    },
+    {
+      "check": "es.release.catalog",
+      "ok": true,
+      "required": true,
+      "detail": "live 6500ee90cee6b0bd vs catalog 6500ee90cee6b0bd"
+    },
+    {
+      "check": "es.release.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=published_http_verified http=pass"
+    },
+    {
+      "check": "es.release.assets",
+      "ok": true,
+      "required": true,
+      "detail": "roles=['audio', 'captions', 'content', 'page']"
+    },
+    {
+      "check": "es.content.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "es.content.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 114bee6dddaee286 vs release 114bee6dddaee286"
+    },
+    {
+      "check": "es.content.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=revelation-jesus-will-return-20261122 targetLocale=es"
+    },
+    {
+      "check": "es.content.duration",
+      "ok": true,
+      "required": true,
+      "detail": "durationSeconds=2144.107333"
+    },
+    {
+      "check": "es.content.drift",
+      "ok": true,
+      "required": true,
+      "detail": "audioDuration-duration=-0.000s"
+    },
+    {
+      "check": "es.captions.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "es.captions.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 44b5857fa6f0a868 vs release 44b5857fa6f0a868"
+    },
+    {
+      "check": "es.captions.count",
+      "ok": true,
+      "required": true,
+      "detail": "captions=457 content=457"
+    },
+    {
+      "check": "es.captions.bounds",
+      "ok": true,
+      "required": true,
+      "detail": "last cue end=2139.225 audio=2144.107"
+    },
+    {
+      "check": "es.reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "reference release 6500ee90cee6b0bd vs catalog 6500ee90cee6b0bd"
+    },
+    {
+      "check": "es.reference.hashes",
+      "ok": true,
+      "required": true,
+      "detail": "content/captions hashes differ"
+    },
+    {
+      "check": "es.reference.blocks",
+      "ok": true,
+      "required": true,
+      "detail": "blocks=457 cues=457"
+    },
+    {
+      "check": "ko.release.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /releases-v2/revelation-jesus-will-return-20261122/ko.json -> 200"
+    },
+    {
+      "check": "ko.release.catalog",
+      "ok": true,
+      "required": true,
+      "detail": "live e6b592146dd97a07 vs catalog e6b592146dd97a07"
+    },
+    {
+      "check": "ko.release.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=published_http_verified http=pass"
+    },
+    {
+      "check": "ko.release.assets",
+      "ok": true,
+      "required": true,
+      "detail": "roles=['audio', 'captions', 'content', 'page']"
+    },
+    {
+      "check": "ko.content.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "ko.content.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 832c0cb87215ea74 vs release 832c0cb87215ea74"
+    },
+    {
+      "check": "ko.content.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=revelation-jesus-will-return-20261122 targetLocale=ko"
+    },
+    {
+      "check": "ko.content.duration",
+      "ok": true,
+      "required": true,
+      "detail": "durationSeconds=2144.107333"
+    },
+    {
+      "check": "ko.content.drift",
+      "ok": true,
+      "required": true,
+      "detail": "audioDuration-duration=-0.000s"
+    },
+    {
+      "check": "ko.captions.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "ko.captions.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 9558b6ffb04c9673 vs release 9558b6ffb04c9673"
+    },
+    {
+      "check": "ko.captions.count",
+      "ok": true,
+      "required": true,
+      "detail": "captions=457 content=457"
+    },
+    {
+      "check": "ko.captions.bounds",
+      "ok": true,
+      "required": true,
+      "detail": "last cue end=2139.856 audio=2144.107"
+    },
+    {
+      "check": "ko.reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "reference release e6b592146dd97a07 vs catalog e6b592146dd97a07"
+    },
+    {
+      "check": "ko.reference.hashes",
+      "ok": true,
+      "required": true,
+      "detail": "content/captions hashes differ"
+    },
+    {
+      "check": "ko.reference.blocks",
+      "ok": true,
+      "required": true,
+      "detail": "blocks=457 cues=457"
+    },
+    {
+      "check": "zh-Hans.release.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /releases-v2/revelation-jesus-will-return-20261122/zh-Hans.json -> 200"
+    },
+    {
+      "check": "zh-Hans.release.catalog",
+      "ok": true,
+      "required": true,
+      "detail": "live 399d511d0f12ef8c vs catalog 399d511d0f12ef8c"
+    },
+    {
+      "check": "zh-Hans.release.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=published_http_verified http=pass"
+    },
+    {
+      "check": "zh-Hans.release.assets",
+      "ok": true,
+      "required": true,
+      "detail": "roles=['audio', 'captions', 'content', 'page']"
+    },
+    {
+      "check": "zh-Hans.content.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "zh-Hans.content.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 76facc64ebb7a723 vs release 76facc64ebb7a723"
+    },
+    {
+      "check": "zh-Hans.content.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=revelation-jesus-will-return-20261122 targetLocale=zh-Hans"
+    },
+    {
+      "check": "zh-Hans.content.duration",
+      "ok": true,
+      "required": true,
+      "detail": "durationSeconds=2144.107333"
+    },
+    {
+      "check": "zh-Hans.content.drift",
+      "ok": true,
+      "required": true,
+      "detail": "audioDuration-duration=-0.000s"
+    },
+    {
+      "check": "zh-Hans.captions.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "zh-Hans.captions.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 53d1c731572f95a7 vs release 53d1c731572f95a7"
+    },
+    {
+      "check": "zh-Hans.captions.count",
+      "ok": true,
+      "required": true,
+      "detail": "captions=457 content=457"
+    },
+    {
+      "check": "zh-Hans.captions.bounds",
+      "ok": true,
+      "required": true,
+      "detail": "last cue end=2139.843 audio=2144.107"
+    },
+    {
+      "check": "zh-Hans.reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "reference release 399d511d0f12ef8c vs catalog 399d511d0f12ef8c"
+    },
+    {
+      "check": "zh-Hans.reference.hashes",
+      "ok": true,
+      "required": true,
+      "detail": "content/captions hashes differ"
+    },
+    {
+      "check": "zh-Hans.reference.blocks",
+      "ok": true,
+      "required": true,
+      "detail": "blocks=457 cues=457"
+    },
+    {
+      "check": "alignment.capability.es",
+      "ok": true,
+      "required": true,
+      "detail": "capabilities=['text', 'captions', 'audio', 'alignment']"
+    },
+    {
+      "check": "alignment.capability.ko",
+      "ok": true,
+      "required": true,
+      "detail": "capabilities=['text', 'captions', 'audio', 'alignment']"
+    },
+    {
+      "check": "alignment.capability.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "capabilities=['text', 'captions', 'audio', 'alignment']"
+    },
+    {
+      "check": "alignment.sidecar.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /alignment/<pageId>.json -> 200"
+    },
+    {
+      "check": "alignment.sidecar.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "alignment.sidecar.targets",
+      "ok": true,
+      "required": true,
+      "detail": "targets=['es', 'ko', 'zh-Hans']"
+    },
+    {
+      "check": "alignment.sidecar.binding.es",
+      "ok": true,
+      "required": true,
+      "detail": "sidecar binding differs from catalog"
+    },
+    {
+      "check": "alignment.sidecar.release.es",
+      "ok": true,
+      "required": true,
+      "detail": "sidecar release 6500ee90cee6b0bd vs catalog 6500ee90cee6b0bd"
+    },
+    {
+      "check": "alignment.index.http.es",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "alignment.index.hash.es",
+      "ok": true,
+      "required": true,
+      "detail": "live 75f951bb0d190817 vs binding 75f951bb0d190817"
+    },
+    {
+      "check": "alignment.index.identity.es",
+      "ok": true,
+      "required": true,
+      "detail": "index pageId=revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "alignment.drift.es",
+      "ok": true,
+      "required": true,
+      "detail": "track≈2144.107s vs window 2144.107s gap=0.000s"
+    },
+    {
+      "check": "alignment.sidecar.binding.ko",
+      "ok": true,
+      "required": true,
+      "detail": "sidecar binding differs from catalog"
+    },
+    {
+      "check": "alignment.sidecar.release.ko",
+      "ok": true,
+      "required": true,
+      "detail": "sidecar release e6b592146dd97a07 vs catalog e6b592146dd97a07"
+    },
+    {
+      "check": "alignment.index.http.ko",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "alignment.index.hash.ko",
+      "ok": true,
+      "required": true,
+      "detail": "live 88e986a00b681c14 vs binding 88e986a00b681c14"
+    },
+    {
+      "check": "alignment.index.identity.ko",
+      "ok": true,
+      "required": true,
+      "detail": "index pageId=revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "alignment.drift.ko",
+      "ok": true,
+      "required": true,
+      "detail": "track≈2144.107s vs window 2144.107s gap=0.000s"
+    },
+    {
+      "check": "alignment.sidecar.binding.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "sidecar binding differs from catalog"
+    },
+    {
+      "check": "alignment.sidecar.release.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "sidecar release 399d511d0f12ef8c vs catalog 399d511d0f12ef8c"
+    },
+    {
+      "check": "alignment.index.http.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "alignment.index.hash.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "live 8262c078360ab350 vs binding 8262c078360ab350"
+    },
+    {
+      "check": "alignment.index.identity.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "index pageId=revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "alignment.drift.zh-Hans",
+      "ok": true,
+      "required": true,
+      "detail": "track≈2144.107s vs window 2144.107s gap=0.000s"
+    },
+    {
+      "check": "guide.manifest.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET https://ai-for-god-sermon-audio.web.app/weekly-guides/manifest-v1.json -> 200"
+    },
+    {
+      "check": "guide.pins",
+      "ok": true,
+      "required": true,
+      "detail": "schema=tongxing-weekly-guide-manifest-v1 series=revelation-comfort-and-hope"
+    },
+    {
+      "check": "guide.humanApproval",
+      "ok": true,
+      "required": true,
+      "detail": "humanApproval=False review=machine_translation_not_human_reviewed"
+    },
+    {
+      "check": "guide.entries",
+      "ok": true,
+      "required": true,
+      "detail": "entries=4"
+    },
+    {
+      "check": "guide.entry.unique",
+      "ok": true,
+      "required": true,
+      "detail": "entries for page: 1"
+    },
+    {
+      "check": "guide.entry.locale",
+      "ok": true,
+      "required": true,
+      "detail": "entry locale=zh-Hans"
+    },
+    {
+      "check": "guide.entry.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=available"
+    },
+    {
+      "check": "guide.entry.edition",
+      "ok": true,
+      "required": true,
+      "detail": "entry=revelation-jesus-will-return-20261122 page=revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "guide.entry.identity",
+      "ok": true,
+      "required": true,
+      "detail": "entry=fb9de13bffc56668 page=fb9de13bffc56668"
+    },
+    {
+      "check": "guide.entry.release",
+      "ok": true,
+      "required": true,
+      "detail": "entry=399d511d0f12ef8c live=399d511d0f12ef8c"
+    },
+    {
+      "check": "guide.bytes.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /weekly-guides/published/55a0c5d7afb481a8fe371ac7c22a0a486ad3211d34ffdf4750f84cac6a29ae6d.json -> 200"
+    },
+    {
+      "check": "guide.bytes.size",
+      "ok": true,
+      "required": true,
+      "detail": "bytes=14606 entry=14606"
+    },
+    {
+      "check": "guide.bytes.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 55a0c5d7afb481a8 vs entry 55a0c5d7afb481a8"
+    },
+    {
+      "check": "guide.guide",
+      "ok": true,
+      "required": true,
+      "detail": "id=revelation-jesus-will-return-20261122 week=11 sections=12"
+    },
+    {
+      "check": "page.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET page html -> 200"
+    },
+    {
+      "check": "page.title",
+      "ok": true,
+      "required": true,
+      "detail": "catalog title '耶稣必再来' not found in rendered page html"
+    },
+    {
+      "check": "es.page.heading.http",
+      "ok": true,
+      "required": true,
+      "detail": "content -> 200, page html -> 200"
+    },
+    {
+      "check": "es.page.heading",
+      "ok": true,
+      "required": true,
+      "detail": "missing=[] order=ok"
+    },
+    {
+      "check": "ko.page.heading.http",
+      "ok": true,
+      "required": true,
+      "detail": "content -> 200, page html -> 200"
+    },
+    {
+      "check": "ko.page.heading",
+      "ok": true,
+      "required": true,
+      "detail": "missing=[] order=ok"
+    },
+    {
+      "check": "zh-Hans.page.heading.http",
+      "ok": true,
+      "required": true,
+      "detail": "content -> 200, page html -> 200"
+    },
+    {
+      "check": "zh-Hans.page.heading",
+      "ok": true,
+      "required": true,
+      "detail": "missing=[] order=ok"
+    }
+  ]
+}

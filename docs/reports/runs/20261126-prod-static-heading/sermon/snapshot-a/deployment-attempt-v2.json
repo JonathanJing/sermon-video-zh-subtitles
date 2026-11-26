@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "sermon-deployment-attempt-v2",
+  "attemptId": "4ec45b47-400f-44c6-9bb7-971cd2c86548",
+  "intent": {
+    "channel": "production_web",
+    "environment": "production",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "project": "ai-for-god-caption-dev",
+    "schemaVersion": "sermon-release-intent-v1",
+    "site": "ai-for-god-sermon-audio"
+  },
+  "catalogSha256": "b4120e13800c9b6d9e516cb63fbb8ddd8efc7fee725435f026b0b4616af1abf0",
+  "assetsSha256": "0ce20430dffefb72e2b07f6aadd5123385bb086100594c3da68be5cc9b041b5c",
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/31a7d57c0f2b49d9",
+  "newVersion": "sites/ai-for-god-sermon-audio/versions/d8144f86a27c9769",
+  "startedAt": "2026-11-26T16:08:08.789746+00:00",
+  "completedAt": "2026-11-26T16:09:42.720373+00:00",
+  "status": "deployed",
+  "leaseGeneration": "1795709289015080",
+  "leaseBucket": "ai-for-god-sermon-media-prod",
+  "deployMethod": "hosting_incremental_v1",
+  "versionPropagation": {
+    "schemaVersion": "sermon-hosting-version-propagation-v2",
+    "attemptId": "4ec45b47-400f-44c6-9bb7-971cd2c86548",
+    "baselineVersion": "sites/ai-for-god-sermon-audio/versions/31a7d57c0f2b49d9",
+    "ownedVersion": "sites/ai-for-god-sermon-audio/versions/d8144f86a27c9769",
+    "deployMethod": "hosting_incremental_v1",
+    "evidenceFile": "incremental-publish.json",
+    "evidenceSha256": "69b5ad754df17e45446ea8e484a0d088a0b23aefd2501d9c410cb4c28650beac",
+    "ownedVersionObserved": true
+  }
+}

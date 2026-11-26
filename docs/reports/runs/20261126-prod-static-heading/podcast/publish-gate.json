@@ -1,0 +1,437 @@
+{
+  "schemaVersion": "sentence-first-publish-gate-v1",
+  "checkedAt": "2026-11-26T16:12:08.840240+00:00",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "pageId": "if-i-had-more-time-jesus-will-return",
+  "catalogSha256": "37d9e9ccfba44dbc8d19fb95b2f6ccea84080a9394980624677f7c9769e709b6",
+  "status": "pass",
+  "failed": [],
+  "checks": [
+    {
+      "check": "catalog.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /multilingual-v5.json -> 200"
+    },
+    {
+      "check": "catalog.schema",
+      "ok": true,
+      "required": true,
+      "detail": "schema=sermon-multilingual-catalog-v5"
+    },
+    {
+      "check": "catalog.page",
+      "ok": true,
+      "required": true,
+      "detail": "pages with id if-i-had-more-time-jesus-will-return: 1"
+    },
+    {
+      "check": "catalog.defaultPageId",
+      "ok": true,
+      "required": true,
+      "detail": "defaultPageId=revelation-jesus-will-return-20261122 expected latest sermon revelation-jesus-will-return-20261122"
+    },
+    {
+      "check": "catalog.locales",
+      "ok": true,
+      "required": true,
+      "detail": "targets=['es', 'ko', 'zh-Hans']"
+    },
+    {
+      "check": "catalog.title",
+      "ok": true,
+      "required": true,
+      "detail": "title='如果我有更多时间 · 耶稣必再来'"
+    },
+    {
+      "check": "reference.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /english-reference/if-i-had-more-time-jesus-will-return.json -> 200"
+    },
+    {
+      "check": "reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "schema=sermon-published-english-reference-v1 review=human_approved"
+    },
+    {
+      "check": "reference.locales",
+      "ok": true,
+      "required": true,
+      "detail": "targets=['es', 'ko', 'zh-Hans']"
+    },
+    {
+      "check": "es.release.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /releases-v2/if-i-had-more-time-jesus-will-return/es.json -> 200"
+    },
+    {
+      "check": "es.release.catalog",
+      "ok": true,
+      "required": true,
+      "detail": "live a7873115f80a8384 vs catalog a7873115f80a8384"
+    },
+    {
+      "check": "es.release.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=published_http_verified http=pass"
+    },
+    {
+      "check": "es.release.assets",
+      "ok": true,
+      "required": true,
+      "detail": "roles=['audio', 'captions', 'content', 'page']"
+    },
+    {
+      "check": "es.content.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "es.content.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 9fb7037491062b71 vs release 9fb7037491062b71"
+    },
+    {
+      "check": "es.content.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=if-i-had-more-time-jesus-will-return targetLocale=es"
+    },
+    {
+      "check": "es.content.duration",
+      "ok": true,
+      "required": true,
+      "detail": "durationSeconds=2230.671"
+    },
+    {
+      "check": "es.content.drift",
+      "ok": true,
+      "required": true,
+      "detail": "audioDuration-duration=+290.869s ratio=1.130"
+    },
+    {
+      "check": "es.captions.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "es.captions.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 063ec608e5293e83 vs release 063ec608e5293e83"
+    },
+    {
+      "check": "es.captions.count",
+      "ok": true,
+      "required": true,
+      "detail": "captions=493 content=493"
+    },
+    {
+      "check": "es.captions.bounds",
+      "ok": true,
+      "required": true,
+      "detail": "last cue end=2521.54 audio=2521.54"
+    },
+    {
+      "check": "es.reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "reference release a7873115f80a8384 vs catalog a7873115f80a8384"
+    },
+    {
+      "check": "es.reference.hashes",
+      "ok": true,
+      "required": true,
+      "detail": "content/captions hashes differ"
+    },
+    {
+      "check": "es.reference.blocks",
+      "ok": true,
+      "required": true,
+      "detail": "blocks=493 cues=493"
+    },
+    {
+      "check": "ko.release.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /releases-v2/if-i-had-more-time-jesus-will-return/ko.json -> 200"
+    },
+    {
+      "check": "ko.release.catalog",
+      "ok": true,
+      "required": true,
+      "detail": "live 2c78795378cf31c0 vs catalog 2c78795378cf31c0"
+    },
+    {
+      "check": "ko.release.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=published_http_verified http=pass"
+    },
+    {
+      "check": "ko.release.assets",
+      "ok": true,
+      "required": true,
+      "detail": "roles=['audio', 'captions', 'content', 'page']"
+    },
+    {
+      "check": "ko.content.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "ko.content.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live fa485260029815bc vs release fa485260029815bc"
+    },
+    {
+      "check": "ko.content.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=if-i-had-more-time-jesus-will-return targetLocale=ko"
+    },
+    {
+      "check": "ko.content.duration",
+      "ok": true,
+      "required": true,
+      "detail": "durationSeconds=2230.671"
+    },
+    {
+      "check": "ko.content.drift",
+      "ok": true,
+      "required": true,
+      "detail": "audioDuration-duration=+339.429s ratio=1.152"
+    },
+    {
+      "check": "ko.captions.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "ko.captions.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 1a9055d44675dc92 vs release 1a9055d44675dc92"
+    },
+    {
+      "check": "ko.captions.count",
+      "ok": true,
+      "required": true,
+      "detail": "captions=493 content=493"
+    },
+    {
+      "check": "ko.captions.bounds",
+      "ok": true,
+      "required": true,
+      "detail": "last cue end=2570.1 audio=2570.1"
+    },
+    {
+      "check": "ko.reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "reference release 2c78795378cf31c0 vs catalog 2c78795378cf31c0"
+    },
+    {
+      "check": "ko.reference.hashes",
+      "ok": true,
+      "required": true,
+      "detail": "content/captions hashes differ"
+    },
+    {
+      "check": "ko.reference.blocks",
+      "ok": true,
+      "required": true,
+      "detail": "blocks=493 cues=493"
+    },
+    {
+      "check": "zh-Hans.release.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET /releases-v2/if-i-had-more-time-jesus-will-return/zh-Hans.json -> 200"
+    },
+    {
+      "check": "zh-Hans.release.catalog",
+      "ok": true,
+      "required": true,
+      "detail": "live f4d6207bbadfa498 vs catalog f4d6207bbadfa498"
+    },
+    {
+      "check": "zh-Hans.release.status",
+      "ok": true,
+      "required": true,
+      "detail": "status=published_http_verified http=pass"
+    },
+    {
+      "check": "zh-Hans.release.assets",
+      "ok": true,
+      "required": true,
+      "detail": "roles=['audio', 'captions', 'content', 'page']"
+    },
+    {
+      "check": "zh-Hans.content.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "zh-Hans.content.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 4dffe7f072e549fe vs release 4dffe7f072e549fe"
+    },
+    {
+      "check": "zh-Hans.content.identity",
+      "ok": true,
+      "required": true,
+      "detail": "pageId=if-i-had-more-time-jesus-will-return targetLocale=zh-Hans"
+    },
+    {
+      "check": "zh-Hans.content.duration",
+      "ok": true,
+      "required": true,
+      "detail": "durationSeconds=2230.671"
+    },
+    {
+      "check": "zh-Hans.content.drift",
+      "ok": true,
+      "required": true,
+      "detail": "audioDuration-duration=+134.629s ratio=1.060"
+    },
+    {
+      "check": "zh-Hans.captions.http",
+      "ok": true,
+      "required": true,
+      "detail": "200"
+    },
+    {
+      "check": "zh-Hans.captions.hash",
+      "ok": true,
+      "required": true,
+      "detail": "live 70f35e1421eb912b vs release 70f35e1421eb912b"
+    },
+    {
+      "check": "zh-Hans.captions.count",
+      "ok": true,
+      "required": true,
+      "detail": "captions=493 content=493"
+    },
+    {
+      "check": "zh-Hans.captions.bounds",
+      "ok": true,
+      "required": true,
+      "detail": "last cue end=2365.3 audio=2365.3"
+    },
+    {
+      "check": "zh-Hans.reference.identity",
+      "ok": true,
+      "required": true,
+      "detail": "reference release f4d6207bbadfa498 vs catalog f4d6207bbadfa498"
+    },
+    {
+      "check": "zh-Hans.reference.hashes",
+      "ok": true,
+      "required": true,
+      "detail": "content/captions hashes differ"
+    },
+    {
+      "check": "zh-Hans.reference.blocks",
+      "ok": true,
+      "required": true,
+      "detail": "blocks=493 cues=493"
+    },
+    {
+      "check": "alignment.binding",
+      "ok": true,
+      "required": false,
+      "detail": "no audioFingerprint in catalog"
+    },
+    {
+      "check": "guide.manifest.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET https://ai-for-god-sermon-audio.web.app/weekly-guides/manifest-v1.json -> 200"
+    },
+    {
+      "check": "guide.pins",
+      "ok": true,
+      "required": true,
+      "detail": "schema=tongxing-weekly-guide-manifest-v1 series=revelation-comfort-and-hope"
+    },
+    {
+      "check": "guide.humanApproval",
+      "ok": true,
+      "required": true,
+      "detail": "humanApproval=False review=machine_translation_not_human_reviewed"
+    },
+    {
+      "check": "guide.entries",
+      "ok": true,
+      "required": true,
+      "detail": "entries=4"
+    },
+    {
+      "check": "guide.entry",
+      "ok": true,
+      "required": false,
+      "detail": "no entry for if-i-had-more-time-jesus-will-return in https://ai-for-god-sermon-audio.web.app/weekly-guides/manifest-v1.json"
+    },
+    {
+      "check": "page.http",
+      "ok": true,
+      "required": true,
+      "detail": "GET page html -> 200"
+    },
+    {
+      "check": "page.title",
+      "ok": true,
+      "required": true,
+      "detail": "catalog title '如果我有更多时间 · 耶稣必再来' not found in rendered page html"
+    },
+    {
+      "check": "es.page.heading.http",
+      "ok": true,
+      "required": true,
+      "detail": "content -> 200, page html -> 200"
+    },
+    {
+      "check": "es.page.heading",
+      "ok": true,
+      "required": true,
+      "detail": "missing=[] order=ok"
+    },
+    {
+      "check": "ko.page.heading.http",
+      "ok": true,
+      "required": true,
+      "detail": "content -> 200, page html -> 200"
+    },
+    {
+      "check": "ko.page.heading",
+      "ok": true,
+      "required": true,
+      "detail": "missing=[] order=ok"
+    },
+    {
+      "check": "zh-Hans.page.heading.http",
+      "ok": true,
+      "required": true,
+      "detail": "content -> 200, page html -> 200"
+    },
+    {
+      "check": "zh-Hans.page.heading",
+      "ok": true,
+      "required": true,
+      "detail": "missing=[] order=ok"
+    }
+  ]
+}
