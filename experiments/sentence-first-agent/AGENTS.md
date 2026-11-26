@@ -49,7 +49,7 @@
 | `tools/ops/reseal_snapshot.py` | 本机 | 目录重绑或新增文件后重算 `seal-report.json` 的目录哈希与文件清单，否则 guarded publisher 会以 `Baseline catalog differs`／`incomplete` 拒发 |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
 | `tools/ops/notify.py` | 本机 | Bark 与邮件传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；非 passive 的通知在配置了 `gmail-user`／`gmail-app` 时同时发邮件；不进任何门禁 |
-| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到英文表批准，之后按本文第 2 步继续。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
+| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到三种语言的整轨听审（含听审退回后的改句重配），之后按本文第 10 步继续。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
 | `tools/ops/production_notices.py` | 本机 | 全流程通知清单：每个状态的级别、渠道、链接和措辞；`list` 看全表，`preview`／`send` 生成或发送一条。规则见[人工审核页与通知](../../docs/design/review-gates-and-notifications.zh.md) |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
