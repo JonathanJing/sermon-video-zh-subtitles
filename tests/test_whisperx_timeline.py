@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -118,6 +119,8 @@ a.out.write_text(json.dumps(out))
 
 class TimelineTests(unittest.TestCase):
     def setUp(self):
+        if shutil.which("ffmpeg") is None:
+            self.skipTest("ffmpeg is required")
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.media, self.manifest, self.package = make_fixture(self.root)
