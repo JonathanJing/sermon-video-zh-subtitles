@@ -3,7 +3,7 @@
 ## 结论先行
 
 - **交付类型**：自动生产流程代码与测试，不是页面/音频/发布。
-- **状态**：`integration_tested_pending_production_deploy`。`weekly_auto` 的 `l1.whisperx` 阶段、真实脚本运行和 65 项测试已完成；生产 worktree 尚未部署，完整 Drive→英文表演练和真实周六运行未做。
+- **状态**：`production_deployed_pending_20261128_saturday_run`。`weekly_auto` 的 `l1.whisperx` 阶段、真实脚本运行、65 项测试、生产 worktree 部署和部署后 smoke 已完成；完整 Drive→英文表演练和真实周六运行未做。
 - **证据边界**：测试覆盖驱动/gate/tracks/publish 的合成流程；真实 2026-11-08 只验证了 `l1_whisperx.py → l1_anchor build`，没有重新下载、付费转写或打开审核页。
 
 ## 改动
@@ -59,18 +59,15 @@ uv run --with pytest --with jsonschema --python 3.13 python -m pytest \
 
 覆盖：新阶段在 `l1.transcribe` 后执行、fake WhisperX 输出进入 `l1_anchor`、英文表批准包模型为 `whisperx`、tracks/publish 继续调用 `sfa.py`、rehearsal 走父时间轴回退、缺 runtime 时 fail closed（脚本级）。
 
-## 部署（待执行）
+## 部署（已执行，待 legacy 修复）
 
-```bash
-cd artifacts/worktrees/weekly-auto
-git fetch origin dev
-git checkout --detach origin/dev
-# local.json: "whisperxPython": "<...>/artifacts/whisperx-timeline-ab/runtime/bin/python"
-.venv/bin/python tools/ops/weekly_auto.py agents install --port 8444
-.venv/bin/python tools/ops/weekly_auto.py agents status
-```
-
-部署后先跑一次到英文表的 rehearsal（不发布），确认 `l1.whisperx` 通过、英文表页时间来自 WhisperX、`english-source.json` 的 `transcript.model=whisperx`。再等周六真实文件。
+- 生产 worktree：`artifacts/worktrees/weekly-auto` 已从 `3221f6d6` 更新到 `d8460c90`（PR #1645 + #1646 合并提交）。
+- `local.json` 已加 `whisperxPython` 指向 `artifacts/whisperx-timeline-ab/runtime/bin/python`。
+- `agents install --port 8444` 已执行；两个 LaunchAgent 均为 `running`。
+- 生产环境 smoke：用生产 worktree 的 `.venv` 对 2026-11-08 数据跑 `l1_whisperx.py`，134 chunks、6,124 词、63.75 秒；证据 `artifacts/weekly-auto/whisperx-l1-smoke/`。
+- 部署后发现：旧 production（`rehearsal-20261125-paid`）恢复时 `l1.anchor` 已 done，新阶段仍会跑并替换旧 `words.json`。修复 PR #1646：`l1.anchor` 已 done 时跳过 `l1.whisperx`；已合并，生产 worktree 再更新到 `d8460c90` 并 `agents install`。
+- 尚未做：完整 Drive→英文表 rehearsal、真实周六运行、L2/L3/发布。
+- 部署后旧 production 的 `l1.whisperx` 曾在修复前跑过一次（`rehearsal-20261125-paid`，真实数据），说明驱动能执行新阶段；该旧 run 已 blocked 在 `l2.audit`，不用于生产。
 
 ## 覆盖范围
 

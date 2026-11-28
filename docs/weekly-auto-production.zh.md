@@ -1,6 +1,6 @@
 # 周六自动开工：从 Drive 新文件到页面发布
 
-状态：**已在生产机 mbp16 上安装；2026-11-25 做过四次演练（到英文表、付费转写、40 句片段做到三条音轨听审、整篇 470 句做到三条音轨听审并走了一次听审退回后的改句重配）；2026-11-26 用上周已发布的那一页在 Dev 站点演练了发布这一段；2026-11-27 起 Layer 1 默认加入 WhisperX 时间轴（英文表审核前完成），真实周六运行还没有发生过，也还没有人在手机上做过整轨听审**。本页说明装了什么、它自己会做什么、在哪里停下来等人、出问题时怎么处理。路线是[逐句优先](sentence-first-agent-production.zh.md)；每个审核步骤和每条通知的设计见[人工审核页与通知](design/review-gates-and-notifications.zh.md)。
+状态：**已在生产机 mbp16 上安装；2026-11-25 做过四次演练（到英文表、付费转写、40 句片段做到三条音轨听审、整篇 470 句做到三条音轨听审并走了一次听审退回后的改句重配）；2026-11-26 用上周已发布的那一页在 Dev 站点演练了发布这一段；2026-11-27 起 Layer 1 默认加入 WhisperX 时间轴（英文表审核前完成），生产 worktree 已更新到 `d8460c90` 并重启两个 LaunchAgent，真实周六运行还没有发生过，也还没有人在手机上做过整轨听审**。本页说明装了什么、它自己会做什么、在哪里停下来等人、出问题时怎么处理。路线是[逐句优先](sentence-first-agent-production.zh.md)；每个审核步骤和每条通知的设计见[人工审核页与通知](design/review-gates-and-notifications.zh.md)。
 
 长期授权和决定（2026-11-25 用户给出）记录在 [`config/weekly-sermon-auto.json`](../config/weekly-sermon-auto.json)：来源文件夹自动开工；付费转写每周 50 美元上限；页面上的提交算正式结论；英文表批准不要求逐句审完；配音跟不上视频时先由 Opus 口语化、不够再由 Opus 精简。
 
@@ -71,7 +71,7 @@ uv pip install --python artifacts/whisperx-timeline-ab/runtime/bin/python whispe
 "whisperxPython": "/Users/<user>/.../artifacts/whisperx-timeline-ab/runtime/bin/python"
 ```
 
-新一期到英文表时，先确认 `raw-whisperx.json` 和 review 页时间都是 WhisperX；`setup.json` 的 `timelineSource` 应是 `default_sibling` 或 `explicit`，不是 `parent_explicit`。
+新一期到英文表时，先确认 `raw-whisperx.json` 和 review 页时间都是 WhisperX；`setup.json` 的 `timelineSource` 应是 `default_sibling` 或 `explicit`，不是 `parent_explicit`。旧 production 的 `l1.anchor` 已经批准时，驱动会跳过 `l1.whisperx`，不会替换旧句表（2026-11-27 修复）。
 
 ## 它守的规则
 
