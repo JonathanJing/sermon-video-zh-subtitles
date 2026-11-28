@@ -1,6 +1,6 @@
 # Layer 1 时间轴：WhisperX 与 OpenAI `whisper-1` 的 A/B
 
-状态：A/B `machine_ab_requires_human_timing_gold`；生产时间轴 `default_enabled_pending_production_test`。机器对比、生产工具、人工时间轴批准和默认切换已完成；2026-11-28 做第一次真实生产测试。
+状态：A/B `machine_ab_requires_human_timing_gold`；生产时间轴 `default_and_weekly_auto_deployed_pending_20261128_test`。机器对比、生产工具、人工时间轴批准、默认切换和周六自动流程接入已完成；2026-11-28 做第一次真实生产测试。
 
 完整实验、产物哈希和复现命令见[实验 README](../experiments/whisperx-timeline-ab/README.zh.md)，运行记录见[2026-11-27 运行报告](reports/runs/20261127-whisperx-timeline-ab/INDEX.md)。
 
@@ -13,7 +13,7 @@ A/B 的 B 臂已经做成生产工具和真实候选：
 - 批准门：候选包 `translationEligible=false`；听审后 `--approve` 写 `english-source.approved.json`；`sfa.py start --timeline-package` 只接受批准包，候选包会被拒绝。
 - 真实 `prepare_clip` 已消费候选 anchor：460 句、460 个切片、句表单调。
 - 已批准：2026-11-27 21:59 PST 用户听审后批准；批准包 `english-source.approved.json`（`b51086be…`），收据 `timeline-approval-receipt.json`（`c00ec9e1…`）。
-- 已设为逐句优先默认：`sfa.py start --english-package <parent>` 自动选同目录批准包；没有批准包 fail closed。2026-11-28 做第一次真实生产测试（`--allow-parent-timeline` 是显式回滚）。
+- 已设为逐句优先默认：`sfa.py start --english-package <parent>` 自动选同目录批准包；没有批准包 fail closed。周六 Drive 自动流程也在英文表前接入 WhisperX（生产 worktree `d8460c90`），2026-11-28 做第一次真实生产测试（`--allow-parent-timeline` 是显式回滚）。
 
 完整命令、门禁、失效与回滚见[WhisperX Layer 1 时间轴生产手册](whisperx-layer1-timeline-production.zh.md)。
 

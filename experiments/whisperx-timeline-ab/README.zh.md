@@ -18,7 +18,7 @@
 
 ## 生产化（2026-11-27）
 
-B 臂已经做成生产工具和真实候选：`source.whisperx_timeline` + `tools/ops/whisperx_align_runtime.py`，候选在 `artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/`。候选包 `translationEligible=false`；2026-11-27 21:59 PST 用户听审后 `--approve` 写批准包 `english-source.approved.json`（`b51086be…`），`sfa.py start --timeline-package` 只接受批准包。该批准包已设为逐句优先生产默认；2026-11-28 做第一次真实生产测试。完整命令和门禁见[WhisperX Layer 1 时间轴生产手册](../../docs/whisperx-layer1-timeline-production.zh.md)与[生产运行报告](../../docs/reports/runs/20261127-whisperx-timeline-production/INDEX.md)。
+B 臂已经做成生产工具和真实候选：`source.whisperx_timeline` + `tools/ops/whisperx_align_runtime.py`，候选在 `artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/`。候选包 `translationEligible=false`；2026-11-27 21:59 PST 用户听审后 `--approve` 写批准包 `english-source.approved.json`（`b51086be…`），`sfa.py start --timeline-package` 只接受批准包。该批准包已设为逐句优先生产默认；周六 Drive 自动流程也已在英文表前接入 WhisperX（生产 worktree `d8460c90`）。2026-11-28 做第一次真实生产测试。完整命令和门禁见[WhisperX Layer 1 时间轴生产手册](../../docs/whisperx-layer1-timeline-production.zh.md)与[生产运行报告](../../docs/reports/runs/20261127-whisperx-timeline-production/INDEX.md)。
 
 ## 输入与两臂
 
