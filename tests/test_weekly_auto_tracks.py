@@ -132,7 +132,7 @@ def make(tmp_path, monkeypatch):
         path = tmp_path / "config.json"
         path.write_text(json.dumps(config))
         (tmp_path / "ckpt" / "checkpoint-75d28").mkdir(parents=True, exist_ok=True)
-        driver = weekly_auto.Driver(tmp_path, config_path=path, local={"reviewBaseUrl": BASE, "ttsPython": "tts-python", "ttsRuntime": str(tmp_path / "ckpt")},
+        driver = weekly_auto.Driver(tmp_path, config_path=path, local={"reviewBaseUrl": BASE, "ttsPython": "tts-python", "ttsRuntime": str(tmp_path / "ckpt"), "whisperxPython": sys.executable},
                                     run=TrackRun(**run_options), opener=Opener(), notifier=Notifier(), python=sys.executable,
                                     sleep=lambda seconds: None)
         driver.code_root = tmp_path

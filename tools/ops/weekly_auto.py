@@ -11,8 +11,9 @@
     weekly_auto.py url
 
 What runs by itself, from the trigger the Drive watcher writes (tools/ops/drive_upload_watch.py):
-download and hash the file, cut the audio, transcribe (paid, inside the weekly cap), build the
-sentence table, and open two review steps: the kickoff decisions and the English table. Then it
+download and hash the file, cut the audio, transcribe (paid, inside the weekly cap), align the
+timing-pass segments with WhisperX, build the sentence table, and open two review steps: the
+kickoff decisions and the English table. Then it
 waits. A decision from the review page (tools/ops/review_gate_server.py) is checked against the
 files once more; only then are the kickoff record, the revised sentence table, the English
 source package and its receipt written. Translation, dubbing and publishing are not driven
@@ -71,7 +72,7 @@ LABEL_DRIVER = "org.sermonvideo.weekly-auto.driver"
 AGENT_PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 TZ = notices.TZ
 STAGES = ("source.accept", "source.download", "source.derive", "gate.decisions", "l1.prompt", "l1.transcribe",
-          "l1.anchor", "l1.rows", "gate.english", "wait.review", "handoff")
+          "l1.whisperx", "l1.anchor", "l1.rows", "gate.english", "wait.review", "handoff")
 DELIVERABLES = ("页面 + 三语 assets（page/content/audio/captions）", "release 包", "目录（multilingual-v5/v4/v3）",
                 "英文对照 /english-reference/<pageId>.json", "现场对齐（sidecar + 每语指纹索引）", "研读手册条目", "统计目录")
 MAX_NOTICE_ATTEMPTS = 6
@@ -540,22 +541,62 @@ class Driver(weekly_auto_publish.PublishStages, weekly_auto_publish.PosterStages
             raise StageError("process", "转写结束了但缺少输出文件", stageName="英文转写")
         return "done"
 
+    def timeline_backend(self) -> str:
+        return str(self.config["transcription"].get("timelineBackend") or "whisperx")
+
+    def stage_l1_whisperx(self, record: dict) -> str:
+        """Align the timing-pass segments with WhisperX before the English review."""
+        if self.timeline_backend() != "whisperx":
+            return "done"
+        layer1 = self.source_run(record) / "layer1"
+        output = layer1 / "raw-whisperx.json"
+        if output.is_file():
+            return "done"
+        runtime = self.local.get("whisperxPython") or os.environ.get("WHISPERX_PYTHON")
+        if not runtime or not Path(runtime).is_file():
+            raise StageError("config", "WhisperX runtime 未配置：在 local.json 写 whisperxPython，或设 WHISPERX_PYTHON",
+                             stageName="WhisperX 对齐")
+        adapter = ROOT / "tools" / "ops" / "whisperx_align_runtime.py"
+        audio = self.source_run(record) / "source" / "source.wav"
+        self.worker(record, "WhisperX 对齐", "用批准文本前的词级时间替换 whisper-1")
+        command = [self.python, str(EXP / "l1_whisperx.py"),
+                   "--raw-whisper", str(layer1 / "raw-whisper.json"), "--audio", str(audio),
+                   "--out", str(output), "--words-out", str(layer1 / "words.json"),
+                   "--runtime-python", str(runtime), "--adapter", str(adapter)]
+        self.step(record, "WhisperX 对齐", command, cwd=self.work_root)
+        if not output.is_file() or not (layer1 / "words.json").is_file():
+            raise StageError("process", "WhisperX 结束了但缺少输出文件", stageName="WhisperX 对齐")
+        return "done"
+
+    def sync_words(self, manifest_path: Path, words_path: Path) -> None:
+        manifest = read_json(manifest_path)
+        words = [{"text": word["text"], "start": word["start"], "end": word["end"]}
+                 for unit in manifest["sourceUnits"] for word in unit["words"]]
+        review_gates.write_json(words_path, words)
+
     def build_candidate(self, record: dict) -> dict:
         run, source = self.source_run(record), record["source"]
         layer1, candidate = run / "layer1", run / "layer1" / "candidate"
-        command = [self.python, str(EXP / "l1_anchor.py"), "build", "--raw", str(layer1 / "raw-whisper.json"),
+        raw = layer1 / ("raw-whisperx.json" if self.timeline_backend() == "whisperx" else "raw-whisper.json")
+        command = [self.python, str(EXP / "l1_anchor.py"), "build", "--raw", str(raw),
                    "--media-sha256", source["sha256"], "--media-duration", repr(source["durationSeconds"]), "--out", str(candidate),
                    "--source-url", self.config["source"]["folderUrl"], "--date", record["sunday"],
                    "--speaker-source", "single speaker; identity confirmed by the reviewer on the kickoff page; no diarization pass",
                    "--text-chunks", str(layer1 / "gpt-4o-chunks.json")]
+        if self.timeline_backend() == "whisperx":
+            command += ["--timing-basis", "WhisperX wav2vec2 forced alignment of the whisper-1 timing-pass segments",
+                        "--timing-source", "raw-whisperx.json"]
         if (layer1 / "english-fixes.json").is_file():
             command += ["--fixes", str(layer1 / "english-fixes.json")]
         return json.loads(self.step(record, "拆句", command).strip().splitlines()[-1])
 
     def stage_l1_anchor(self, record: dict) -> str:
-        if not (self.source_run(record) / "layer1" / "candidate" / "anchor-manifest.json").is_file():
+        run = self.source_run(record)
+        if not (run / "layer1" / "candidate" / "anchor-manifest.json").is_file():
             self.worker(record, "拆句", "按词时间切成句子")
             self.build_candidate(record)
+        if self.timeline_backend() == "whisperx":
+            self.sync_words(run / "layer1" / "candidate" / "anchor-manifest.json", run / "layer1" / "words.json")
         return "done"
 
     def stage_l1_rows(self, record: dict) -> str:
@@ -759,8 +800,13 @@ class Driver(weekly_auto_publish.PublishStages, weekly_auto_publish.PosterStages
                     "--sync" if self.synced(record) else "--no-sync"]
         rehearsal = bool(record.get("rehearsal"))
         command.append("--publish" if kickoff["decisions"]["publish"] == "production_page" and not rehearsal else "--no-publish")
+        package_model = (package.get("transcript") or {}).get("model")
         if not rehearsal:                                   # a rehearsal package is not approved and would be refused, as it should be
             command += ["--english-package", run / "layer1" / "english-source.json"]
+            if package_model != "whisperx":
+                command += ["--allow-parent-timeline"]
+        else:
+            command += ["--allow-parent-timeline"]
         self.worker(record, "建运行目录", f"{count} 句 · {len(locales)} 种语言")
         self.script(record, "建运行目录", "sfa.py", *command)
         return "done"
@@ -1200,6 +1246,8 @@ class Driver(weekly_auto_publish.PublishStages, weekly_auto_publish.PosterStages
         try:
             self.step(record, "应用修改", [self.python, str(EXP / "l1_anchor.py"), "revise", "--candidate", str(earlier / "anchor-manifest.json"),
                                        "--edits", str(edits_path), "--out", str(candidate), "--text-chunks", str(layer1 / "gpt-4o-chunks.json")])
+            if self.timeline_backend() == "whisperx":
+                self.sync_words(candidate / "anchor-manifest.json", layer1 / "words.json")
         except StageError as exc:
             raise StageError("process", exc.message) from exc
         applied = read_json(candidate / "english-edits-applied.json")
@@ -1244,13 +1292,20 @@ class Driver(weekly_auto_publish.PublishStages, weekly_auto_publish.PosterStages
         try:
             self.step(record, "应用修改", [self.python, str(EXP / "l1_anchor.py"), "revise", "--candidate", str(candidate / "anchor-manifest.json"),
                                        "--edits", str(edits_path), "--out", str(layer1)])
+            if self.timeline_backend() == "whisperx":
+                self.sync_words(layer1 / "anchor-manifest.json", layer1 / "words.json")
+            timing_model = "whisperx" if self.timeline_backend() == "whisperx" else self.config["transcription"]["timingModel"]
+            timing_note = ("WhisperX wav2vec2 强制对齐提供词级时间，gpt-4o-transcribe 提供文本；不是 MFA 音素对齐。"
+                           if timing_model == "whisperx" else
+                           "whisper-1 提供词级时间，gpt-4o-transcribe 提供文本；不是 MFA 音素对齐。")
             command = [self.python, str(EXP / "l1_english_source.py"), "--anchor", str(layer1 / "anchor-manifest.json"),
                        "--words", str(layer1 / "words.json"), "--raw-text", str(layer1 / "raw-gpt-4o-transcribe.txt"),
                        "--upload", str(run / "source" / "sermon-upload.mp3"), "--media", str(run / "source" / "episode.mp4"),
                        "--review-csv", str(layer1 / "english-review.csv"), "--decision", str(record_path),
                        "--authority", "config/weekly-sermon-auto.json#authorizations.pageDecisions",
                        "--root", str(self.work_root), "--out", str(layer1 / "english-source.json"),
-                       "--timing-model", self.config["transcription"]["timingModel"], "--text-model", self.config["transcription"]["textModel"]]
+                       "--timing-model", timing_model, "--timing-note", timing_note,
+                       "--text-model", self.config["transcription"]["textModel"]]
             summary = json.loads(self.step(record, "英文来源包", command + (["--rehearsal"] if record.get("rehearsal") else [])).strip().splitlines()[-1])
         except StageError as exc:
             raise StageError("process", exc.message) from exc

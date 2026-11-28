@@ -1,6 +1,6 @@
 # 周六自动开工：从 Drive 新文件到页面发布
 
-状态：**已在生产机 mbp16 上安装；2026-11-25 做过四次演练（到英文表、付费转写、40 句片段做到三条音轨听审、整篇 470 句做到三条音轨听审并走了一次听审退回后的改句重配）；2026-11-26 用上周已发布的那一页在 Dev 站点演练了发布这一段；真实的周六运行还没有发生过，也还没有人在手机上做过整轨听审**。本页说明装了什么、它自己会做什么、在哪里停下来等人、出问题时怎么处理。路线是[逐句优先](sentence-first-agent-production.zh.md)；每个审核步骤和每条通知的设计见[人工审核页与通知](design/review-gates-and-notifications.zh.md)。
+状态：**已在生产机 mbp16 上安装；2026-11-25 做过四次演练（到英文表、付费转写、40 句片段做到三条音轨听审、整篇 470 句做到三条音轨听审并走了一次听审退回后的改句重配）；2026-11-26 用上周已发布的那一页在 Dev 站点演练了发布这一段；2026-11-27 起 Layer 1 默认加入 WhisperX 时间轴（英文表审核前完成），真实周六运行还没有发生过，也还没有人在手机上做过整轨听审**。本页说明装了什么、它自己会做什么、在哪里停下来等人、出问题时怎么处理。路线是[逐句优先](sentence-first-agent-production.zh.md)；每个审核步骤和每条通知的设计见[人工审核页与通知](design/review-gates-and-notifications.zh.md)。
 
 长期授权和决定（2026-11-25 用户给出）记录在 [`config/weekly-sermon-auto.json`](../config/weekly-sermon-auto.json)：来源文件夹自动开工；付费转写每周 50 美元上限；页面上的提交算正式结论；英文表批准不要求逐句审完；配音跟不上视频时先由 Opus 口语化、不够再由 Opus 精简。
 
@@ -10,7 +10,7 @@
 周六 18:00–22:00  Drive 监控发现新文件 → 写一个触发文件
                   ↓ 驱动被触发文件唤起（另外每 5 分钟检查一次）
 自动              核对来源 → 下载并算哈希 → 切音频 → 打开「开工确认」并通知
-                  → 付费转写（先在周预算账本预留）→ 拆句 → 打开「英文表批准」并通知
+                  → 付费转写（先在周预算账本预留）→ WhisperX 对齐 → 拆句 → 打开「英文表批准」并通知
 等人              你在审核页提交两个决定（英文表可以带着改字直接批准）
 自动              再次核对哈希 → 写开工记录 → 应用你的改字 → 生成英文来源包和收据
                   → 建三语运行目录 → Opus 写本篇用词约定 → Opus 逐句翻译 → 另一个 Opus 独立审计
@@ -41,7 +41,8 @@
 | 驱动 | LaunchAgent `org.sermonvideo.weekly-auto.driver`，运行 `tools/ops/weekly_auto.py pending`；触发文件出现时、登录时和每 5 分钟各运行一次 | 日志 `~/Library/Application Support/org.sermonvideo.weekly-auto/driver.log` |
 | 审核服务 | LaunchAgent `org.sermonvideo.weekly-auto.review`，常驻运行 `tools/ops/review_gate_server.py`，只监听本机回环地址 | 日志同目录 `review.log` |
 | tailnet 入口 | `tailscale serve --bg --https=8444 http://127.0.0.1:8444`，仅 tailnet 内可见的 HTTPS | `tailscale serve status` |
-| 本机设置 | 产物所在的检出、端口、Python、tailnet 地址；不进 Git | `~/Library/Application Support/org.sermonvideo.weekly-auto/local.json` |
+| 本机设置 | 产物所在的检出、端口、Python、tailnet 地址、WhisperX runtime 路径；不进 Git | `~/Library/Application Support/org.sermonvideo.weekly-auto/local.json` |
+| WhisperX runtime | 独立 Python 3.11 + `whisperx==3.8.6` + torch 2.8；模型缓存约 3.3 GB | `local.json` 的 `whisperxPython`（或用 `WHISPERX_PYTHON`） |
 
 代码从主检出下的 `artifacts/worktrees/weekly-auto`（一个固定在已部署提交上的 worktree）运行，产物也写在这个 worktree 自己的 `artifacts/` 下：路线的脚本按自己所在的检出找运行目录、渲染锁和证据路径，所以代码和产物必须在同一个检出里。生产记录在 `artifacts/weekly-auto/<生产名>/`，Layer 1 来源目录在 `artifacts/sentence-first-agent/<生产名>-source/`，三种语言的运行目录是 `<生产名>-zh`、`-ko`、`-es`。真实生产名是 `<周六日期>-sermon`。这个 worktree 有自己的 `.venv`（`tools/development/worktree_venv.py` 建的），OpenAI 凭据文件仍在主检出，路径记在 `local.json` 的 `envFile`。
 
@@ -55,12 +56,28 @@
 .venv/bin/python tools/ops/weekly_auto.py agents status
 ```
 
-`agents install` 会读出本机的 tailnet 名称并写进 `local.json` 和审核服务的启动参数；`agents uninstall` 卸载两个 LaunchAgent，不动产物。更新代码：在部署 worktree 里 `git fetch origin dev && git checkout --detach origin/dev`，再运行一次 `agents install`（它会重启驱动；正在做的阶段从已有产物续跑，已配好的句子不会重配）。
+`agents install` 会读出本机的 tailnet 名称并写进 `local.json` 和审核服务的启动参数；`agents uninstall` 卸载两个 LaunchAgent，不动产物。更新代码：在部署 worktree 里 `git fetch origin dev && git checkout --detach origin/dev`，把 WhisperX runtime 的绝对路径写进 `local.json` 的 `whisperxPython`，再运行一次 `agents install`（它会重启驱动；正在做的阶段从已有产物续跑，已配好的句子不会重配）。
+
+WhisperX runtime 不能装进部署 worktree 的 `.venv`；用独立 Python 3.11：
+
+```bash
+uv venv artifacts/whisperx-timeline-ab/runtime --python 3.11
+uv pip install --python artifacts/whisperx-timeline-ab/runtime/bin/python whisperx==3.8.6
+```
+
+`local.json` 示例增加：
+
+```json
+"whisperxPython": "/Users/<user>/.../artifacts/whisperx-timeline-ab/runtime/bin/python"
+```
+
+新一期到英文表时，先确认 `raw-whisperx.json` 和 review 页时间都是 WhisperX；`setup.json` 的 `timelineSource` 应是 `default_sibling` 或 `explicit`，不是 `parent_explicit`。
 
 ## 它守的规则
 
 - **可续跑。** 每一步的产物已经在就跳过；中途停了，下一次运行接着做。
 - **失败不自动重试。** 一步失败后，定时运行不会再碰它；人看过之后用 `run --production <名> --retry` 重试这一步。
+- **WhisperX 默认在英文表之前。** `transcription.timelineBackend` 默认 `whisperx`：付费转写后先用 WhisperX 对 timing-pass 的分段文本做强制对齐，再用 `raw-whisperx.json` 建句表；你在英文表页看到并批准的就是这份时间轴（不需要再单独批准一次）。对齐失败或 `local.json` 没有 `whisperxPython` 时这一步失败并通知，不会静默退回 `whisper-1`。回滚：把 `timelineBackend` 设为 `whisper-1`，或对该 run 用 `--allow-parent-timeline`。
 - **付费先预留。** 转写前在周预算账本（`artifacts/weekly-auto/budget/openai-<年>-W<周>.json`，按花钱当天所在的 ISO 周，不按证道所属的周）按最坏情况预留；超过上限就不发请求。预留用的单价是估算，不是账单。
 - **结果不明就停。** 付费步骤没有明确结果时记为未知，之后所有付费步骤都不再发出，直到用 `reconcile --production <名> --outcome charged|not_charged` 对账。
 - **决定要再核对一次。** 审核服务只接受当前版本、带着当前哈希的决定；驱动应用之前再把哈希和文件比一遍，对不上就作废，不产生批准；作废之后驱动按现在的文件把这一步重开成新版本并再通知一次，不会停在那里。开工确认绑定的是来源文件和页面上给出的选项（默认值、标题表里这一周的那一行、讲员列表），不是整个配置文件：2026-11-25 一次部署改了配置里别的设置，把一个已经提交的开工确认判成了作废，之后也没有重开。

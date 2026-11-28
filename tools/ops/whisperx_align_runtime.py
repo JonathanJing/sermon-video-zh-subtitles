@@ -123,8 +123,6 @@ def main() -> int:
                 "expectedTokens": len(expected), "alignedTokens": len(got),
                 "firstDifference": first,
             }, ensure_ascii=False))
-        if len(words) != int(chunk.get("tokenCount", len(words))):
-            raise SystemExit(f"{chunk_id}: token count {len(words)} != request {chunk.get('tokenCount')}")
         output_chunks.append({"id": chunk_id, "start": start, "end": end, "words": words})
         attempts["chunk_exact"] = attempts.get("chunk_exact", 0) + 1
 
