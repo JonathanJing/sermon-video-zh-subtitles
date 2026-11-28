@@ -220,6 +220,78 @@ class TimelineTests(unittest.TestCase):
         self.assertAlmostEqual(args.margin_before, 0.1)
         self.assertAlmostEqual(args.margin_after, 1.1)
 
+    def test_default_timeline_resolution(self):
+        sfa = load_sfa()
+        from unittest.mock import patch
+        parent = self.root / "layer1"
+        parent.mkdir()
+        package = parent / "english-source.json"
+        package.write_text(json.dumps({"transcript": {"model": "openai"}}), encoding="utf-8")
+        approved = self.root / "layer1-whisperx" / "english-source.approved.json"
+        approved.parent.mkdir()
+        approved.write_text(json.dumps({"evidence": [
+            {"sha256": hashlib.sha256(package.read_bytes()).hexdigest()}]}), encoding="utf-8")
+
+        class Args:
+            timeline_package = None
+            allow_parent_timeline = False
+            english_package = package
+            anchor = None
+            media = None
+            window_start = None
+
+        args = Args()
+        with patch.object(sfa, "apply_timeline_package") as apply:
+            sfa.resolve_timeline_package(args)
+            self.assertEqual(args.timeline_package, approved)
+            self.assertEqual(args.timeline_source, "default_sibling")
+            apply.assert_called_once_with(args)
+
+        wrong = Args()
+        wrong.approved = approved
+        wrong.timeline_package = approved
+        wrong.english_package = self.root / "wrong-parent.json"
+        wrong.english_package.write_text("{}", encoding="utf-8")
+        with self.assertRaises(sfa.SetupError):
+            sfa.resolve_timeline_package(wrong)
+
+        missing = Args()
+        missing.english_package = self.root / "other" / "english-source.json"
+        missing.english_package.parent.mkdir()
+        missing.english_package.write_text(json.dumps({"transcript": {"model": "openai"}}), encoding="utf-8")
+        with self.assertRaises(sfa.SetupError):
+            sfa.resolve_timeline_package(missing)
+
+        parent_args = Args()
+        parent_args.allow_parent_timeline = True
+        parent_args.anchor = self.root / "parent-anchor.json"
+        parent_args.media = self.root / "parent-media.mp4"
+        parent_args.window_start = 0.0
+        with patch.object(sfa, "apply_timeline_package") as apply:
+            sfa.resolve_timeline_package(parent_args)
+            self.assertEqual(parent_args.timeline_source, "parent_explicit")
+            apply.assert_not_called()
+
+        parent_package = Args()
+        parent_package.allow_parent_timeline = True
+        with patch.object(sfa, "apply_timeline_package") as apply:
+            sfa.resolve_timeline_package(parent_package)
+            self.assertEqual(parent_package.timeline_source, "parent_explicit")
+            apply.assert_called_once_with(parent_package)
+
+        explicit = Args()
+        explicit.timeline_package = approved
+        with patch.object(sfa, "apply_timeline_package") as apply:
+            sfa.resolve_timeline_package(explicit)
+            self.assertEqual(explicit.timeline_source, "explicit")
+            apply.assert_called_once_with(explicit)
+
+        both = Args()
+        both.timeline_package = approved
+        both.allow_parent_timeline = True
+        with self.assertRaises(sfa.SetupError):
+            sfa.resolve_timeline_package(both)
+
     def test_build_chunks_breaks_at_gap(self):
         units = [
             {"sourceUnitId": "u1", "english": "A.", "start": 0.0, "end": 1.0,

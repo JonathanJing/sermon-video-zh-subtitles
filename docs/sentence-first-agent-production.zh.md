@@ -24,7 +24,7 @@
 
 | 层 | 本路线怎么做 | 产物 |
 |---|---|---|
-| Layer 1 英文与锚点 | 沿用正式 Layer 1 的批准窗口与锚点清单；每个锚点单元就是一句；双人时按说话人区分结果逐词投票给每句定讲员，一致度低的句子请用户确认 | `sentences.jsonl`、原声切片、`speakers.json` |
+| Layer 1 英文与锚点 | 沿用正式 Layer 1 的批准窗口与锚点清单；默认用 WhisperX 对批准英文做强制对齐并逐期人工批准时间轴（`layer1-whisperx/english-source.approved.json`），换时间轴即新 Layer 1 身份；每个锚点单元就是一句；双人时按说话人区分结果逐词投票给每句定讲员，一致度低的句子请用户确认 | `sentences.jsonl`、原声切片、`speakers.json`、`setup.json` 的 `timelinePackage` |
 | Layer 2 译文 | 已有批准的中文就直接按句用；其他语言由子代理并行逐句翻译并自我复核，主代理合并、补读法 | `translations.jsonl`、`review.json` |
 | Layer 3 音频 | Spark 上的 Qwen3-TTS 讲员 checkpoint 逐句合成（单讲员 batch 8、8 个模型副本，2026-10-24 实测 4.3–5.9 倍实时；对谈仍可 batch 1；不拉伸、不变速），本机按英文起点合并；回转写 2026-10-28 起不再是流程或可审条件 | `tts/`、`track.wav`、`schedule.json`（`asr.jsonl` 为历史可选） |
 | 审核 | 用户听每条整轨，审非中文译文，结论写成审核收据 | 审核表（CSV）、`human-review-verdict.json` |

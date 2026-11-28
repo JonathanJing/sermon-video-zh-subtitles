@@ -3,8 +3,8 @@
 ## 1. 结论先行
 
 - **类型**：Layer 1 时间轴生产工具 + 真实候选包；不是页面/音频/发布。
-- **状态**：`approved_ready_for_first_production_run`。
-- **结论**：WhisperX 时间轴已经能作为生产候选进入 `sfa.py start --timeline-package`；候选包被拒绝，批准包才能开工。真实人工听审与批准已完成。
+- **状态**：`default_enabled_pending_production_test`。
+- **结论**：WhisperX 批准包已设为逐句优先生产默认；`sfa.py start --english-package` 自动选同目录批准包，缺失则 fail closed；2026-11-28 首次真实生产测试。
 - **证据边界**：机器结构门、`prepare_clip` 消费、真实人工批准均完成；批准包已绑定批准收据，没有 L2–L4，没有真实周更。
 
 ## 2. 总时间
@@ -52,7 +52,7 @@
 - L1 文本：未改；父包已人工批准。
 - 人工时间轴听审/批准：执行（2026-11-27 21:59 PST）。
 - L2/L3/L4：`not_run`。
-- 真实周更：`not_run`；批准包已就绪。
+- 真实周更：`not_run`；默认已切换，2026-11-28 首次真实生产测试。
 
 ## 7. 遗留状态
 

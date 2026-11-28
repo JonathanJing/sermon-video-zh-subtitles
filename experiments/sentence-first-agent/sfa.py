@@ -26,6 +26,9 @@ still written by prepare_clip.py only. The full preflight (which needs translati
 review and speech) still runs before TTS: this command journals l1.preflight.setup, the
 full gate keeps l1.preflight.
 
+WhisperX timeline default: pass --english-package with the parent Layer 1 package;
+its sibling ``layer1-whisperx/english-source.approved.json`` is selected
+automatically. ``--allow-parent-timeline`` is the explicit rollback/legacy path.
 Examples:
   python3 sfa.py start --run 20261102-jesus-wins-zh --locale zh-Hans \\
       --share-to ko=20261102-jesus-wins-ko --share-to es=20261102-jesus-wins-es \\
@@ -42,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import hashlib
 import json
 import os
 import shutil
@@ -422,8 +426,10 @@ def build_plan(a, run: Path, shares: dict[str, Path], prepare_needed: bool) -> l
     steps.append({"step": "prepare", "action": "run" if prepare_needed else "skip",
                   "run": repo_relative(run),
                   "reason": "clip.json/sentences.jsonl missing" if prepare_needed else "already prepared",
-                  **({"timelinePackage": repo_relative(a.timeline_package)}
-                     if getattr(a, "timeline_package", None) else {})})
+                  **({"timelinePackage": repo_relative(a.timeline_package),
+                      "timelineSource": getattr(a, "timeline_source", None)}
+                     if getattr(a, "timeline_package", None) else
+                     {"timelineSource": getattr(a, "timeline_source", None)})})
     if a.segments and a.speaker_map:
         steps.append({"step": "speakers", "action": "run", "run": repo_relative(run),
                       "detail": "assign_speakers.py" + (" --use-text" if a.use_text else "")})
@@ -537,6 +543,67 @@ def apply_timeline_package(a) -> None:
     a.timeline_margins = {"before": a.margin_before, "after": a.margin_after}
 
 
+def _verify_parent_binding(timeline_package: Path, parent_package: Path) -> None:
+    try:
+        package = json.loads(timeline_package.read_text(encoding="utf-8"))
+        parent_sha = hashlib.sha256(parent_package.read_bytes()).hexdigest()
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SetupError("args", f"cannot verify timeline parent binding: {exc}") from exc
+    if not any(isinstance(ref, dict) and ref.get("sha256") == parent_sha
+               for ref in (package.get("evidence") or [])):
+        raise SetupError("args", "timeline package does not bind the supplied parent English package")
+
+
+def resolve_timeline_package(a) -> None:
+    """Resolve the default timeline before any run work starts.
+
+    WhisperX is the default for a new sentence-first run: an approved package is
+    expected next to the parent Layer 1 package (``layer1-whisperx/``), or passed
+    explicitly. ``--allow-parent-timeline`` is the explicit rollback/legacy path.
+    """
+    if a.timeline_package and a.allow_parent_timeline:
+        raise SetupError("args", "--timeline-package and --allow-parent-timeline are mutually exclusive")
+    if a.timeline_package:
+        if a.english_package and a.english_package != a.timeline_package:
+            _verify_parent_binding(a.timeline_package, a.english_package)
+        apply_timeline_package(a)
+        a.timeline_source = "explicit"
+        return
+    if a.allow_parent_timeline:
+        # Rollback is one flag when the parent package is available: reuse its
+        # approved anchor/media/window. Explicit anchor/media/window still win.
+        if a.english_package and (a.anchor is None or a.media is None or a.window_start is None):
+            a.timeline_package = a.english_package
+            apply_timeline_package(a)
+        a.timeline_source = "parent_explicit"
+        return
+    if not a.english_package:
+        raise SetupError("args", "WhisperX timeline is the default; provide --english-package "
+                                 "(parent Layer 1 package), --timeline-package, or --allow-parent-timeline")
+    try:
+        package = json.loads(a.english_package.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SetupError("args", f"--english-package is not readable JSON: {exc}") from exc
+    if (package.get("transcript") or {}).get("model") == "whisperx":
+        a.timeline_package = a.english_package
+        apply_timeline_package(a)
+        a.timeline_source = "explicit_english_package"
+        return
+    candidates = [
+        a.english_package.parent / "layer1-whisperx" / "english-source.approved.json",
+        a.english_package.parent.parent / "layer1-whisperx" / "english-source.approved.json",
+    ]
+    candidate = next((path for path in candidates if path.is_file()), None)
+    if candidate is None:
+        raise SetupError("args", "WhisperX timeline is the default; approved package not found at "
+                                 + " or ".join(str(path) for path in candidates)
+                                 + ". Run the timeline producer and --approve it, or pass --allow-parent-timeline.")
+    _verify_parent_binding(candidate, a.english_package)
+    a.timeline_package = candidate
+    apply_timeline_package(a)
+    a.timeline_source = "default_sibling"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -562,6 +629,8 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--english-package", type=_path, help="Layer 1 english-source.json for the gate")
     start.add_argument("--timeline-package", type=_path,
                        help="approved WhisperX timeline english-source.json; fills --anchor/--media/--english-package")
+    start.add_argument("--allow-parent-timeline", action="store_true",
+                       help="explicit rollback/legacy: use the parent whisper-1 timeline instead of WhisperX; with --english-package it fills anchor/media/window from the parent package")
     start.add_argument("--source-url", help="expected source URL (checked against sourceUrlHash)")
     start.add_argument("--registry", type=_path, default=(ROOT / "config" / "speaker-voice-registry.json"))
     start.add_argument("--spark-session", help="check this Spark exclusive session before starting work")
@@ -594,8 +663,7 @@ def main(argv=None) -> int:
     a = parser.parse_args(argv)
     started = time.monotonic()
     try:
-        if a.timeline_package:
-            apply_timeline_package(a)
+        resolve_timeline_package(a)
         run = resolve_run(a.run)
         shares = parse_shares(a.share_to, a.locale, run)
     except SetupError as exc:
@@ -633,6 +701,7 @@ def main(argv=None) -> int:
                    "englishPackage": str(a.english_package) if a.english_package else None,
                    "timelinePackage": str(a.timeline_package) if a.timeline_package else None,
                    "timelinePackageSha256": getattr(a, "timeline_package_sha", None),
+                   "timelineSource": getattr(a, "timeline_source", None),
                    "timelineMargins": getattr(a, "timeline_margins", None)},
         "decisions": {"publish": bool(a.publish)},
         "gates": {},

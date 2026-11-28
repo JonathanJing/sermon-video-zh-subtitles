@@ -2,10 +2,12 @@
 
 生成时间：2026-11-28（手写脱敏；产物在忽略目录）
 
+> 后续：2026-11-27 该批准包已设为逐句优先生产默认；2026-11-28 做第一次真实生产测试。默认规则见[生产手册](../../../whisperx-layer1-timeline-production.zh.md)。
+
 ## 结论先行
 
 - **交付类型**：Layer 1 时间轴生产工具 + 真实候选包；不是页面、不是 `dual_pdf`、不是 `live_session`。
-- **状态**：`approved_ready_for_first_production_run`。工具、结构门、`prepare_clip` 消费、批准路径和真实人工批准均已完成；默认生产路径未切换，等待第一次真实周更。
+- **状态**：`default_enabled_pending_production_test`。工具、结构门、`prepare_clip` 消费、批准路径、真实人工批准和默认切换均已完成；等待 2026-11-28 第一次真实生产测试。
 - **证据边界**：候选包已由用户在 2026-11-27 21:59 PST 批准，批准包 `translationEligible=true`、`review.humanApproval=true`；机器检查不是人工批准，批准前没有 L2/L3。
 
 ## 输入
@@ -24,8 +26,8 @@
 |---|---|
 | 核心 producer | `packages/production/src/tongxing_production/source/whisperx_timeline.py`，SHA-256 `85fec2d2…` |
 | runtime adapter | `tools/ops/whisperx_align_runtime.py`，SHA-256 `7b6028b7…` |
-| 开工集成 | `experiments/sentence-first-agent/sfa.py`，SHA-256 `516f9e84…` |
-| 测试 | `tests/test_whisperx_timeline.py`，8 项通过 |
+| 开工集成 | `experiments/sentence-first-agent/sfa.py`，SHA-256 `14862209…` |
+| 测试 | `tests/test_whisperx_timeline.py`，9 项通过 |
 | runtime | WhisperX 3.8.6 / torch 2.8.0 / torchaudio 2.8.0 / faster-whisper 1.2.1 / CTranslate2 4.9.1 |
 | 对齐模型 | `WAV2VEC2_ASR_BASE_960H` |
 | 平台 | Apple M1 Max，CPU；独立 Python 3.11 runtime |
