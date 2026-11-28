@@ -1,8 +1,20 @@
 # Layer 1 时间轴：WhisperX 与 OpenAI `whisper-1` 的 A/B
 
-状态：`machine_ab_requires_human_timing_gold`。机器对比完成，人工词级听审未完成；本文不改变任何现有 Layer 1 产物的可发布状态。
+状态：A/B `machine_ab_requires_human_timing_gold`；生产候选 `production_candidate_ready_approval_pending`。机器对比和生产工具完成，人工时间轴听审未完成；本文不改变任何现有 Layer 1 产物的可发布状态。
 
 完整实验、产物哈希和复现命令见[实验 README](../experiments/whisperx-timeline-ab/README.zh.md)，运行记录见[2026-11-27 运行报告](reports/runs/20261127-whisperx-timeline-ab/INDEX.md)。
+
+## 生产化（2026-11-27）
+
+A/B 的 B 臂已经做成生产工具和真实候选：
+
+- 工具：`source.whisperx_timeline`（`PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline`）+ 隔离 runtime 适配器 `tools/ops/whisperx_align_runtime.py`。
+- 候选：`artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/`，460 单元 / 6,136 词，123 分块全部精确对齐，0 结构问题；与实验 B 逐词时间最大差 0.000 秒。
+- 批准门：候选包 `translationEligible=false`；听审后 `--approve` 写 `english-source.approved.json`；`sfa.py start --timeline-package` 只接受批准包，候选包会被拒绝。
+- 真实 `prepare_clip` 已消费候选 anchor：460 句、460 个切片、句表单调。
+- 仍缺：用户听审 `timeline-review.html` 并批准。没有批准前不切换默认值、不做 L2/L3。
+
+完整命令、门禁、失效与回滚见[WhisperX Layer 1 时间轴生产手册](whisperx-layer1-timeline-production.zh.md)。
 
 ## 结论
 

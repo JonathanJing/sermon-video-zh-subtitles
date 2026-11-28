@@ -16,6 +16,10 @@
 
 **建议**：下一轮先做 shadow（shadow 是并行运行、不发布）：保留现有 OpenAI 文本与校正，用 WhisperX 对最终英文做强制对齐，同时保留 `whisper-1` 时间轴；跑 2 期并人工抽查本报告 `review/review.html` 中的争议词/句。通过后再把新 run 的默认时间轴切到 WhisperX；旧 run 不迁移。
 
+## 生产化（2026-11-27）
+
+B 臂已经做成生产工具和真实候选：`source.whisperx_timeline` + `tools/ops/whisperx_align_runtime.py`，候选在 `artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/`。候选包 `translationEligible=false`；听审后 `--approve` 写批准包，`sfa.py start --timeline-package` 只接受批准包。完整命令和门禁见[WhisperX Layer 1 时间轴生产手册](../../docs/whisperx-layer1-timeline-production.zh.md)与[生产运行报告](../../docs/reports/runs/20261127-whisperx-timeline-production/INDEX.md)。
+
 ## 输入与两臂
 
 | 项 | 值 |

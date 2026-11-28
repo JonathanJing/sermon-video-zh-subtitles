@@ -421,7 +421,9 @@ def build_plan(a, run: Path, shares: dict[str, Path], prepare_needed: bool) -> l
                                     (" · package" if (a.check_package or a.publish) else "")}]
     steps.append({"step": "prepare", "action": "run" if prepare_needed else "skip",
                   "run": repo_relative(run),
-                  "reason": "clip.json/sentences.jsonl missing" if prepare_needed else "already prepared"})
+                  "reason": "clip.json/sentences.jsonl missing" if prepare_needed else "already prepared",
+                  **({"timelinePackage": repo_relative(a.timeline_package)}
+                     if getattr(a, "timeline_package", None) else {})})
     if a.segments and a.speaker_map:
         steps.append({"step": "speakers", "action": "run", "run": repo_relative(run),
                       "detail": "assign_speakers.py" + (" --use-text" if a.use_text else "")})
@@ -473,6 +475,54 @@ def _path(value: str) -> Path:
     return Path(value).expanduser().resolve()
 
 
+def _repo_path(value: str) -> Path:
+    path = Path(value).expanduser()
+    return path.resolve() if path.is_absolute() else (ROOT / path).resolve()
+
+
+def apply_timeline_package(a) -> None:
+    """Use an approved WhisperX timeline package for prepare + English gate.
+
+    The package is the production boundary: a timing-only Layer 1 revision that
+    keeps the approved text/window and adds an operator-approved word timeline.
+    Refuse a candidate package so a machine timeline cannot reach production.
+    """
+    path = _path(str(a.timeline_package))
+    if not path.is_file():
+        raise SetupError("args", f"--timeline-package not found: {path}")
+    try:
+        package = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SetupError("args", f"--timeline-package is not readable JSON: {exc}") from exc
+    if package.get("translationEligible") is not True:
+        raise SetupError("args", "--timeline-package is not translation-eligible; approve it first")
+    if (package.get("review") or {}).get("humanApproval") is not True:
+        raise SetupError("args", "--timeline-package has no human approval")
+    anchor = _repo_path(str((package.get("anchors") or {}).get("artifact", {}).get("path", "")))
+    if not anchor.is_file():
+        raise SetupError("args", f"--timeline-package anchor not found: {anchor}")
+    expected = (package.get("anchors") or {}).get("artifact", {}).get("sha256")
+    import hashlib
+    if not expected or hashlib.sha256(anchor.read_bytes()).hexdigest() != expected:
+        raise SetupError("args", "--timeline-package anchor hash differs from the package")
+    media_value = (package.get("source") or {}).get("media", {}).get("file")
+    if not media_value:
+        raise SetupError("args", "--timeline-package has no source media path")
+    media = _repo_path(str(media_value))
+    if not media.is_file():
+        raise SetupError("args", f"--timeline-package media not found: {media}")
+    window = (package.get("source") or {}).get("approvedWindow") or {}
+    if window.get("humanApproval") is not True or window.get("status") != "approved":
+        raise SetupError("args", "--timeline-package window is not approved")
+    if a.window_start is not None and abs(float(a.window_start) - float(window.get("start", -1))) > 0.001:
+        raise SetupError("args", "--window-start differs from --timeline-package")
+    a.anchor = anchor
+    a.media = media
+    a.window_start = float(window["start"])
+    a.english_package = path
+    a.timeline_package_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -496,6 +546,8 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--min-share", type=float, default=0.8)
     start.add_argument("--speaker-offset", type=float, help="assign_speakers --offset (default: clip.json mediaStart)")
     start.add_argument("--english-package", type=_path, help="Layer 1 english-source.json for the gate")
+    start.add_argument("--timeline-package", type=_path,
+                       help="approved WhisperX timeline english-source.json; fills --anchor/--media/--english-package")
     start.add_argument("--source-url", help="expected source URL (checked against sourceUrlHash)")
     start.add_argument("--registry", type=_path, default=(ROOT / "config" / "speaker-voice-registry.json"))
     start.add_argument("--spark-session", help="check this Spark exclusive session before starting work")
@@ -528,6 +580,8 @@ def main(argv=None) -> int:
     a = parser.parse_args(argv)
     started = time.monotonic()
     try:
+        if a.timeline_package:
+            apply_timeline_package(a)
         run = resolve_run(a.run)
         shares = parse_shares(a.share_to, a.locale, run)
     except SetupError as exc:
@@ -562,7 +616,9 @@ def main(argv=None) -> int:
                    "units": a.units,
                    "segments": str(a.segments) if a.segments else None,
                    "speakerMap": str(a.speaker_map) if a.speaker_map else None,
-                   "englishPackage": str(a.english_package) if a.english_package else None},
+                   "englishPackage": str(a.english_package) if a.english_package else None,
+                   "timelinePackage": str(a.timeline_package) if a.timeline_package else None,
+                   "timelinePackageSha256": getattr(a, "timeline_package_sha", None)},
         "decisions": {"publish": bool(a.publish)},
         "gates": {},
         "elapsedSeconds": None,

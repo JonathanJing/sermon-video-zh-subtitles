@@ -64,6 +64,25 @@
 | `asr_triage.py` | 本机 | 把 ASR 差异分成同音/数字/变体与内容差异 |
 | `runlog.py` | 本机 | journal/outcome/timings 包装；导出器自动读 |
 
+### Layer 1 时间轴（WhisperX，2026-11-27 起生产候选）
+
+不换文本、只换词级时间轴时，先按[WhisperX Layer 1 时间轴生产手册](../../docs/whisperx-layer1-timeline-production.zh.md)生成候选包、听审、`--approve`，再开工：
+
+```bash
+WHISPERX_PYTHON=<isolated-python-with-whisperx> \
+PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
+  --english-source <layer1>/english-source.json --out <layer1>/layer1-whisperx
+# 听审 <out>/timeline-review.html 后
+PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
+  --out <layer1>/layer1-whisperx --approve "<reviewer>" --approved-at "<ISO-8601>"
+
+python3 sfa.py start --run <run> --locale zh-Hans \
+  --timeline-package <layer1>/layer1-whisperx/english-source.approved.json \
+  --units <LO:HI> --title "<title>" --sync --publish
+```
+
+候选包是 `translationEligible=false`，`sfa.py` 会拒绝；只有 `english-source.approved.json` 能进开工。旧 run 和旧包不迁移，默认值未切换。
+
 ## 目录
 
 ```text
