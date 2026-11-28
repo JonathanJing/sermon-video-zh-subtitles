@@ -5,8 +5,8 @@
 ## 结论先行
 
 - **交付类型**：Layer 1 时间轴生产工具 + 真实候选包；不是页面、不是 `dual_pdf`、不是 `live_session`。
-- **状态**：`production_candidate_ready_approval_pending`。工具、结构门、`prepare_clip` 消费和批准路径已验证；**人工时间轴听审未执行**，默认生产路径未切换。
-- **证据边界**：候选包 `translationEligible=false`、`review.humanApproval=false`；机器检查不是人工批准。批准路径只在测试副本上跑过，真实批准收据不存在。
+- **状态**：`approved_ready_for_first_production_run`。工具、结构门、`prepare_clip` 消费、批准路径和真实人工批准均已完成；默认生产路径未切换，等待第一次真实周更。
+- **证据边界**：候选包已由用户在 2026-11-27 21:59 PST 批准，批准包 `translationEligible=true`、`review.humanApproval=true`；机器检查不是人工批准，批准前没有 L2/L3。
 
 ## 输入
 
@@ -39,7 +39,7 @@
 | WhisperX 对齐 | **50.3 秒**（0.023× 实时） | 123/123 `chunk_exact`，0 失败 |
 | 校验与包构建 | <2 秒 | 0 零/负时长、0 重叠、0 非单调；最长词 2.462 秒 |
 | 听审页片段 | 约 5 秒 | 20 个位移最大的单元 |
-| 测试副本批准路径 | <1 秒 | 只测字段和哈希，不是真实批准 |
+| 真实批准 | 2026-11-27 21:59 PST | 用户批准；写批准包与收据 |
 
 ## 候选结果
 
@@ -54,6 +54,17 @@
 | 单元终点位移 | P50 0.046 / P90 0.180 / P95 0.297 / 最大 2.076 秒 |
 | 终点 >250 ms | 26 / 460 |
 | 与 A/B 实验 B 的逐词起点差 | 最大 0.000 秒（6,136 词） |
+
+## 人工批准
+
+| 项 | 值 |
+|---|---|
+| 批准人 | Jony（chat，2026-11-27 21:59 PST） |
+| 批准时间 | `2026-11-28T05:59:19+00:00` |
+| 批准包 | `english-source.approved.json`，SHA-256 `b51086be4e4cb5a56ccbe1342f5b6eb4099cbbdbf4c8f4df3449bdcc515ca879` |
+| 批准收据 | `timeline-approval-receipt.json`，SHA-256 `c00ec9e15c00817a78f647077ed74c0befc0ca8608840ddfaacfd4304e9dfed4` |
+| 语义 | timing-only revision；文本/窗口继承父批准；`wordAlignment` 是新的人工结论 |
+| 未改变 | 父包、发布状态、生产默认值、L2–L4 |
 
 ## 产物与哈希
 
@@ -70,6 +81,8 @@
 | `timeline-review.html` | 8.6 KB | `b485d469e4e1e04217359092482fc829af0997143be440d83c2d8b194b49318e` |
 | `runtime-result.json` | 618 KB | `190d98a7869fcbb1a3eeae864d0da2447c685c5b5540312353f9618a95a6a14b` |
 | `source-clip.wav` | 66 MB | `27946c1ffe33387c7db646107aacf66cc67bd74c81a4303096845d2ce5333232` |
+| `english-source.approved.json` | 102 KB | `b51086be4e4cb5a56ccbe1342f5b6eb4099cbbdbf4c8f4df3449bdcc515ca879` |
+| `timeline-approval-receipt.json` | 2.2 KB | `c00ec9e15c00817a78f647077ed74c0befc0ca8608840ddfaacfd4304e9dfed4` |
 
 验证副本 `artifacts/sentence-first-agent/whisperx-timeline-proof-20261108/`（不代表正式 run）：
 
@@ -87,8 +100,8 @@
 | 候选结构 | `whisperx_timeline --out <out> --check` | `pass` |
 | `prepare_clip` | 用候选 anchor 建 460 句/切片 | 成功；句界单调 |
 | 候选包拒绝 | `sfa.py start --timeline-package <candidate>` | 拒绝：`not translation-eligible` |
-| 批准包接受 | 测试副本批准后 `sfa.py start --plan --timeline-package <approved>` | plan 通过；字段自动填充 |
-| 批准包字段 | 测试副本 `--check` | `ready_for_translation` + `humanApproval=true` + 四项 `checks=approved` |
+| 批准包接受 | 真实批准后 `sfa.py start --plan --timeline-package <approved>` | plan 通过；字段自动填充 |
+| 批准包字段 | `--check` | `ready_for_translation` + `humanApproval=true` + 四项 `checks=approved` |
 
 ## 错误与处理
 
@@ -104,9 +117,9 @@
 
 - **Layer 1 时间轴**：执行（父包校验、媒体哈希、抽音频、分块、WhisperX 对齐、结构门、候选包、听审页、批准路径测试）。
 - **Layer 1 文本**：`not_run`（工具不改文本；父包文本已人工批准）。
-- **人工时间轴听审/批准**：`not_run`；听审页已生成。
+- **人工时间轴听审/批准**：执行；2026-11-27 21:59 PST 用户批准 timing-only revision。
 - **L2/L3/L4**：`not_run`；没有翻译、TTS、发布。
-- **真实周更**：`not_run`；等待批准。
+- **真实周更**：`not_run`；批准包已就绪，等待第一次真实周更。
 
 ## 外部可见变化
 

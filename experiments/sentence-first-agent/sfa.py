@@ -516,11 +516,25 @@ def apply_timeline_package(a) -> None:
         raise SetupError("args", "--timeline-package window is not approved")
     if a.window_start is not None and abs(float(a.window_start) - float(window.get("start", -1))) > 0.001:
         raise SetupError("args", "--window-start differs from --timeline-package")
+    try:
+        anchor_value = json.loads(anchor.read_text(encoding="utf-8"))
+        units = anchor_value["sourceUnits"]
+        first_start = float(units[0]["start"])
+        last_end = float(units[-1]["end"])
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise SetupError("args", f"--timeline-package anchor is not a usable manifest: {exc}") from exc
+    window_start, window_end = float(window["start"]), float(window["end"])
+    # Keep the clip inside the approved window: a margin larger than the
+    # available lead/tail would ask prepare_clip to read outside the window
+    # (or before the media) and fail. Clamp only the timeline-package path.
+    a.margin_before = min(float(a.margin_before), max(0.0, first_start))
+    a.margin_after = min(float(a.margin_after), max(0.0, (window_end - window_start) - last_end))
     a.anchor = anchor
     a.media = media
-    a.window_start = float(window["start"])
+    a.window_start = window_start
     a.english_package = path
     a.timeline_package_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+    a.timeline_margins = {"before": a.margin_before, "after": a.margin_after}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -618,7 +632,8 @@ def main(argv=None) -> int:
                    "speakerMap": str(a.speaker_map) if a.speaker_map else None,
                    "englishPackage": str(a.english_package) if a.english_package else None,
                    "timelinePackage": str(a.timeline_package) if a.timeline_package else None,
-                   "timelinePackageSha256": getattr(a, "timeline_package_sha", None)},
+                   "timelinePackageSha256": getattr(a, "timeline_package_sha", None),
+                   "timelineMargins": getattr(a, "timeline_margins", None)},
         "decisions": {"publish": bool(a.publish)},
         "gates": {},
         "elapsedSeconds": None,

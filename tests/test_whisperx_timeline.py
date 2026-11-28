@@ -199,6 +199,8 @@ class TimelineTests(unittest.TestCase):
             anchor = None
             media = None
             english_package = None
+            margin_before = 1.0
+            margin_after = 8.0
         with self.assertRaises(sfa.SetupError):
             sfa.apply_timeline_package(Args())
         self.assertEqual(timeline.main([
@@ -212,6 +214,8 @@ class TimelineTests(unittest.TestCase):
         self.assertEqual(args.window_start, 0.0)
         self.assertTrue(args.anchor.is_file())
         self.assertTrue(args.media.is_file())
+        self.assertAlmostEqual(args.margin_before, 0.1)
+        self.assertAlmostEqual(args.margin_after, 1.1)
 
     def test_build_chunks_breaks_at_gap(self):
         units = [
