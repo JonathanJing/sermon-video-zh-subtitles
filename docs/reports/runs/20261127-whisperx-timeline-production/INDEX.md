@@ -22,7 +22,7 @@
 
 | 组件 | 身份 |
 |---|---|
-| 核心 producer | `packages/production/src/tongxing_production/source/whisperx_timeline.py`，SHA-256 `9cd065e3…` |
+| 核心 producer | `packages/production/src/tongxing_production/source/whisperx_timeline.py`，SHA-256 `85fec2d2…` |
 | runtime adapter | `tools/ops/whisperx_align_runtime.py`，SHA-256 `7b6028b7…` |
 | 开工集成 | `experiments/sentence-first-agent/sfa.py`，SHA-256 `516f9e84…` |
 | 测试 | `tests/test_whisperx_timeline.py`，8 项通过 |

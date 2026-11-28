@@ -30,9 +30,7 @@ import math
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
-import sys
 import time
 from typing import Any
 
@@ -42,7 +40,6 @@ ANCHOR_SCHEMA = "sermon-sentence-anchor-manifest-v2"
 REQUEST_SCHEMA = "sermon-whisperx-alignment-request-v1"
 RESULT_SCHEMA = "sermon-whisperx-alignment-result-v1"
 TOKEN_RE = re.compile(r"[a-z0-9]+(?:['’][a-z0-9]+)?", re.I)
-RELATIVE_REPO = Path(__file__).resolve().parents[5]
 
 
 class TimelineError(ValueError):
@@ -93,16 +90,21 @@ def _require(condition: bool, code: str, detail: str = "") -> None:
         raise TimelineError(code, detail)
 
 
-def resolve_path(value: str | Path, root: Path = RELATIVE_REPO) -> Path:
+def resolve_path(value: str | Path, root: Path | None = None) -> Path:
     path = Path(value)
-    return path.resolve() if path.is_absolute() else (root / path).resolve()
+    if path.is_absolute():
+        return path.resolve()
+    return ((Path(root) if root is not None else Path.cwd()) / path).resolve()
 
 
 def _evidence(path: Path, value: Any | None = None) -> dict:
     path = path.resolve()
     _require(path.is_file(), "artifact_missing", str(path))
-    item = {"path": str(path.relative_to(RELATIVE_REPO)) if str(path).startswith(str(RELATIVE_REPO)) else str(path),
-            "sha256": sha256_file(path)}
+    try:
+        display = path.relative_to(Path.cwd()).as_posix()
+    except ValueError:
+        display = str(path)
+    item = {"path": display, "sha256": sha256_file(path)}
     if value is not None:
         item["jsonSha256"] = sha256_json(value)
     return item
@@ -509,7 +511,7 @@ def _build_package(parent: dict, *, manifest_path: Path, manifest: dict,
         "reviewedSourceUnitIds": [unit["sourceUnitId"] for unit in manifest["sourceUnits"]] if approved else [],
         "anchorManifestJsonSha256": sha256_json(manifest),
         "alignedSegmentsSha256": words_artifact["sha256"],
-        "reviewFile": str(review_csv.relative_to(RELATIVE_REPO)) if str(review_csv).startswith(str(RELATIVE_REPO)) else str(review_csv),
+        "reviewFile": str(review_csv),
         "reviewFileSha256": sha256_file(review_csv),
         "note": note,
         "checksInheritedFromParent": (["sourceIdentity", "transcriptCompleteness",
@@ -846,7 +848,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime-python", default=os.environ.get("WHISPERX_PYTHON", ""),
                         help="isolated Python that has whisperx (or WHISPERX_PYTHON)")
     parser.add_argument("--adapter", type=Path,
-                        default=RELATIVE_REPO / "tools" / "ops" / "whisperx_align_runtime.py")
+                        default=Path("tools") / "ops" / "whisperx_align_runtime.py")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--language", default="en")
     parser.add_argument("--chunk-target-seconds", type=float, default=18.0)
