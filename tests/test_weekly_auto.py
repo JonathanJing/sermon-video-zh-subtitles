@@ -210,9 +210,11 @@ def test_page_decisions_produce_the_kickoff_record_and_an_approved_english_packa
     layer1 = tmp_path / "artifacts/sentence-first-agent" / f"{name}-source" / "layer1"
     package = json.loads((layer1 / "english-source.json").read_text())
     assert (package["status"], package["translationEligible"], package["review"]["humanApproval"]) == ("ready_for_translation", True, True)
+    assert package["transcript"]["model"] == "whisperx"
     assert [u["english"] for u in package["units"]] == [*SENTENCES[:2], "The writer says the city had twelve gates.", *SENTENCES[3:6]]
     assert package["review"]["reviewer"] == "Me (tailscale, review page)"
     candidate = json.loads((layer1 / "candidate" / "anchor-manifest.json").read_text())
+    assert candidate["policy"]["timingBasis"].startswith("WhisperX")
     assert package["review"]["decision"]["candidateAnchorManifestJsonSha256"] == weekly_auto.json_sha(candidate)
     assert package["anchors"]["artifact"]["jsonSha256"] != weekly_auto.json_sha(candidate), "the receipt binds the revised table"
     last = driver.store.last_decision(name, "l1.english-review")
