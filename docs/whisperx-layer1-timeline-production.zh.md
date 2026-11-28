@@ -1,6 +1,6 @@
 # WhisperX Layer 1 时间轴：生产默认、批准与首次生产测试
 
-状态：`default_enabled_pending_production_test`。生产工具、真实候选包、结构门禁、`prepare_clip` 消费验证和人工批准均已完成；逐句优先生产路线的默认时间轴已切到 WhisperX，**2026-11-28 做第一次真实生产测试**。
+状态：`default_and_weekly_auto_deployed_pending_20261128_test`。生产工具、真实候选包、结构门禁、`prepare_clip` 消费验证和人工批准均已完成；逐句优先生产路线的默认时间轴已切到 WhisperX，周六 Drive 自动流程也已在英文表前接入 WhisperX（生产 worktree `d8460c90`，2026-11-27 部署），**2026-11-28 做第一次真实生产测试**。
 
 本页只讲生产化和批准。A/B 方法、MFA 对比与精度证据见[实验 README](../experiments/whisperx-timeline-ab/README.zh.md)和[运行报告](reports/runs/20261127-whisperx-timeline-ab/INDEX.md)。
 
