@@ -24,12 +24,14 @@
 | 阶段 | 默认模型 | 用途 | 备注 |
 |---|---|---|---|
 | 高质量英文参考听写 | `gpt-transcribe` | 生成更准确、更自然的英文 transcript reference | 使用 `prompt`、`keywords`、`languages=["en"]`；不作为最终时间轴来源 |
-| 稳定字幕时间轴 | `whisper-1` with `verbose_json` | 生成 segment/word timestamps | 目前仍是更适合字幕时间轴的 OpenAI 路径 |
+| 稳定字幕时间轴 | `whisper-1` with `verbose_json` | 生成 segment/word timestamps | 历史默认；2026-11-27 A/B 显示 WhisperX 强制对齐更接近独立 MFA，但人工词级听审未完成，见[WhisperX 时间轴 A/B](whisperx-layer1-timeline-ab.zh.md) |
 | 英文分段校正 | `gpt-5.6` / high | 用 `gpt-transcribe` 参考文本校正 Whisper 分段英文 | 必须保持 segment id、start、end 不变 |
 | 中文字幕生成 | `gpt-5.6` / high | 逐条生成时间轴中文字幕 | 字幕阶段允许跨 cue 残句，不等同于最终阅读版 |
 | 中文阅读编辑与校对 | `gpt-5.6-sol` / high | 把字幕重组为完整语义段落，并进行第二轮中英对照校对 | 阅读版交付前必须通过独立文本门禁 |
 
 不要用 `gpt-5.6` 或 `gpt-5.6-sol` 做 ASR。它们用于英文校正、翻译和阅读编辑，不是 Audio Transcriptions API 的听写模型。
+
+> 2026-11-27 的 A/B 只回答“时间轴能不能换”，不改变本文其余历史实现：WhisperX 对同一份批准英文的强制对齐在 5,080 个可比较词上比 `whisper-1` 更接近 MFA，且没有零时长/重叠；但 WhisperX 自己的文本 WER 更差，所以文本仍用 `gpt-transcribe`/`gpt-4o-transcribe`。默认切换还没有发生，见[结论与限制](whisperx-layer1-timeline-ab.zh.md)。
 
 ## 每周输入
 
