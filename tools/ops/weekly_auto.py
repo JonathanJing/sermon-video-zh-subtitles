@@ -552,6 +552,10 @@ class Driver(weekly_auto_publish.PublishStages, weekly_auto_publish.PosterStages
         output = layer1 / "raw-whisperx.json"
         if output.is_file():
             return "done"
+        if record.get("stages", {}).get("l1.anchor", {}).get("state") == "done":
+            # A production created before this stage existed already has an approved
+            # L1 table. Never replace that table while resuming an old run.
+            return "done"
         runtime = self.local.get("whisperxPython") or os.environ.get("WHISPERX_PYTHON")
         if not runtime or not Path(runtime).is_file():
             raise StageError("config", "WhisperX runtime 未配置：在 local.json 写 whisperxPython，或设 WHISPERX_PYTHON",

@@ -494,3 +494,11 @@ def test_title_table_and_speaker_registry_are_read_for_the_kickoff_page(driver):
     options = {option["value"]: option for option in driver.speaker_options()}
     assert options["eric_geiger"]["locales"] == ["zh-Hans", "ko", "es"] and options["eric_geiger"]["checkpointReady"] is True
     assert driver.page_url({"production": "p"}) == f"{BASE}/index.html?production=p"
+
+
+def test_a_production_created_before_whisperx_keeps_its_approved_l1(driver, tmp_path):
+    record = {"production": "old-sermon", "rehearsal": True,
+              "sourceRun": "artifacts/sentence-first-agent/old-sermon-source",
+              "stages": {"l1.anchor": {"state": "done"}}}
+    assert driver.stage_l1_whisperx(record) == "done"
+    assert not (tmp_path / "artifacts/sentence-first-agent/old-sermon-source/layer1/raw-whisperx.json").exists()

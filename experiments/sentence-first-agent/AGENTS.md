@@ -66,7 +66,7 @@
 
 ### Layer 1 时间轴（WhisperX，2026-11-27 起默认）
 
-逐句优先新 run 的默认时间轴是已批准的 WhisperX 包。`sfa.py start` 传父 `--english-package` 时自动选同一期目录下的 `layer1-whisperx/english-source.approved.json`（也兼容 `<layer1>/layer1-whisperx/`）；没有批准包就 fail closed，不会静默用父 `whisper-1` 时间轴。`--allow-parent-timeline` 是明确的回滚/旧路径；`--timeline-package` 可显式指定批准包。
+逐句优先新 run 的默认时间轴是已批准的 WhisperX 包。`sfa.py start` 传父 `--english-package` 时自动选同一期目录下的 `layer1-whisperx/english-source.approved.json`（也兼容 `<layer1>/layer1-whisperx/`）；没有批准包就 fail closed，不会静默用父 `whisper-1` 时间轴。`--allow-parent-timeline` 是明确的回滚/旧路径；`--timeline-package` 可显式指定批准包。周六的 Drive 自动流程也已在英文表审核前加入 `l1.whisperx`，见[周六自动开工](../../docs/weekly-auto-production.zh.md)。
 
 2026-11-08 的候选已由用户在 **2026-11-27 21:59 PST** 批准：批准包 `artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/english-source.approved.json`（SHA-256 `b51086be…`），收据 `timeline-approval-receipt.json`（`c00ec9e1…`）。这期批准只覆盖这一期；其他期次必须逐期生成、听审、批准，不能复用。
 
