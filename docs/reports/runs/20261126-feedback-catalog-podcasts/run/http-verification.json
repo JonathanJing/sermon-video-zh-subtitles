@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "feedback-catalog-sync-verification-v1",
+  "revision": "sermon-feedback-api-00027-muv",
+  "checked": 18,
+  "failed": [],
+  "rows": [
+    {
+      "week": "2026-11-01",
+      "trackId": "revelation-jesus-marks-his-own-20261101-es-b58ac65a965a",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-01",
+      "trackId": "revelation-jesus-marks-his-own-20261101-ko-8fb4be1622dc",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-01",
+      "trackId": "revelation-jesus-marks-his-own-20261101-zh-Hans-e973e924f414",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-01",
+      "trackId": "if-i-had-more-time-jesus-marks-his-own-es-70a1c50bd79c",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-01",
+      "trackId": "if-i-had-more-time-jesus-marks-his-own-ko-fcdc27d53f11",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-01",
+      "trackId": "if-i-had-more-time-jesus-marks-his-own-zh-Hans-9c389229758a",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-08",
+      "trackId": "if-i-had-more-time-jesus-is-just-es-2e38fe66ec44",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-08",
+      "trackId": "if-i-had-more-time-jesus-is-just-ko-ff425c8a5583",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-08",
+      "trackId": "if-i-had-more-time-jesus-is-just-zh-Hans-1236c35755b4",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-15",
+      "trackId": "if-i-had-more-time-jesus-is-better-than-this-world-es-bbe9457ab16c",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-15",
+      "trackId": "if-i-had-more-time-jesus-is-better-than-this-world-ko-abb4f7eba7a1",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-15",
+      "trackId": "if-i-had-more-time-jesus-is-better-than-this-world-zh-Hans-314f49bafa12",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-22",
+      "trackId": "if-i-had-more-time-jesus-will-return-es-fb23ee3d4f32",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-22",
+      "trackId": "if-i-had-more-time-jesus-will-return-ko-48383f5d7ba1",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-22",
+      "trackId": "if-i-had-more-time-jesus-will-return-zh-Hans-541895465433",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-22",
+      "trackId": "revelation-jesus-will-return-20261122-zh-Hans-f3c83534e1b2",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-22",
+      "trackId": "revelation-jesus-will-return-20261122-ko-a484924764b4",
+      "status": 200,
+      "token": "<redacted>"
+    },
+    {
+      "week": "2026-11-22",
+      "trackId": "revelation-jesus-will-return-20261122-es-6602f1edabfe",
+      "status": 200,
+      "token": "<redacted>"
+    }
+  ],
+  "status": "pass"
+}

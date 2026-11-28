@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261126-feedback-catalog-podcasts",
+  "runs": [
+    {
+      "label": "run",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/feedback-catalog-sync-20261126/run",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run",
+      "path": "http-verification.json",
+      "kind": "whole",
+      "bytes": 2751,
+      "truncated": false,
+      "sha256": "33a74c510b0501d8a7b68b90d96a338caa9cdf9697a97fced7a7257132a3854b",
+      "redactions": {
+        "secret_field": 18
+      }
+    },
+    {
+      "run": "run",
+      "path": "smoke-podcast-after-es.json",
+      "kind": "whole",
+      "bytes": 6214,
+      "truncated": false,
+      "sha256": "6e28e1018aaff968709c0a3390e94559c9b02f66a95d04dfef90e22491749494",
+      "redactions": {}
+    },
+    {
+      "run": "run",
+      "path": "smoke-podcast-after-ko.json",
+      "kind": "whole",
+      "bytes": 6245,
+      "truncated": false,
+      "sha256": "2d7f1f71ca986601839582eb7d774167801778ef4cc6e731841905d6135ae977",
+      "redactions": {}
+    },
+    {
+      "run": "run",
+      "path": "smoke-podcast-after-zh-Hans.json",
+      "kind": "whole",
+      "bytes": 6245,
+      "truncated": false,
+      "sha256": "9e908ad5af44739b6255aa4a91d01ab750ab2f782a7277ddb89741450f15b78a",
+      "redactions": {}
+    },
+    {
+      "run": "run",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2104,
+      "truncated": false,
+      "sha256": "898d787af5dcdc0a32997a11352ab001c9267816f2fad8241fe66eabd88427db",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "feedback-catalog-sync-summary-v1",
+  "function": "sermon-feedback-api",
+  "previousRevision": "sermon-feedback-api-00026-yer",
+  "previousSourceGeneration": "1795329268096330",
+  "newRevision": "sermon-feedback-api-00027-muv",
+  "newSourceGeneration": "1795712478561481",
+  "deployedBy": "user (terminal); agent deploy refused by permission check",
+  "previousCatalogSha256": "4c12864315543911e506a3a0f8a17c63af8abb9d6d2e794440ae7fee6cf35726",
+  "newCatalogSha256": "87f90249161e57799d85005adbfb9dd007e661d95b4612a835c3d4e16cea07bb",
+  "codeUnchanged": true,
+  "sourcesBefore": 52,
+  "sourcesAfter": 67,
+  "existingRowsUnchanged": true,
+  "added": [
+    "2026-11-01 if-i-had-more-time-jesus-marks-his-own-es-70a1c50bd79c",
+    "2026-11-01 if-i-had-more-time-jesus-marks-his-own-ko-fcdc27d53f11",
+    "2026-11-01 if-i-had-more-time-jesus-marks-his-own-zh-Hans-9c389229758a",
+    "2026-11-01 revelation-jesus-marks-his-own-20261101-es-b58ac65a965a",
+    "2026-11-01 revelation-jesus-marks-his-own-20261101-ko-8fb4be1622dc",
+    "2026-11-01 revelation-jesus-marks-his-own-20261101-zh-Hans-e973e924f414",
+    "2026-11-08 if-i-had-more-time-jesus-is-just-es-2e38fe66ec44",
+    "2026-11-08 if-i-had-more-time-jesus-is-just-ko-ff425c8a5583",
+    "2026-11-08 if-i-had-more-time-jesus-is-just-zh-Hans-1236c35755b4",
+    "2026-11-15 if-i-had-more-time-jesus-is-better-than-this-world-es-bbe9457ab16c",
+    "2026-11-15 if-i-had-more-time-jesus-is-better-than-this-world-ko-abb4f7eba7a1",
+    "2026-11-15 if-i-had-more-time-jesus-is-better-than-this-world-zh-Hans-314f49bafa12",
+    "2026-11-22 if-i-had-more-time-jesus-will-return-es-fb23ee3d4f32",
+    "2026-11-22 if-i-had-more-time-jesus-will-return-ko-48383f5d7ba1",
+    "2026-11-22 if-i-had-more-time-jesus-will-return-zh-Hans-541895465433"
+  ],
+  "keptConflicts": [
+    "revelation-jesus-is-just-20261108 (zh-Hans, ko, es)",
+    "revelation-jesus-is-better-20261115 (zh-Hans, ko, es)"
+  ],
+  "weekIdsAdded": [
+    "2026-11-15"
+  ],
+  "builder": "tools/ops/build_language_listening_catalog.py via artifacts/feedback-catalog-sync-20261126/build_append_only.py (keeps conflicting existing rows)"
+}
