@@ -1,10 +1,20 @@
-# WhisperX Layer 1 时间轴：生产候选与批准门
+# WhisperX Layer 1 时间轴：生产默认、批准与首次生产测试
 
-状态：`approved_ready_for_first_production_run`。生产工具、真实候选包、结构门禁、`prepare_clip` 消费验证和人工批准均已完成；**默认生产路径还没有切换**，下一期用批准包做第一次真实周更。
+状态：`default_enabled_pending_production_test`。生产工具、真实候选包、结构门禁、`prepare_clip` 消费验证和人工批准均已完成；逐句优先生产路线的默认时间轴已切到 WhisperX，**2026-11-28 做第一次真实生产测试**。
 
 本页只讲生产化和批准。A/B 方法、MFA 对比与精度证据见[实验 README](../experiments/whisperx-timeline-ab/README.zh.md)和[运行报告](reports/runs/20261127-whisperx-timeline-ab/INDEX.md)。
 
 **2026-11-27 21:59 PST 已批准**：用户听审后批准 timing-only revision，批准包为 `artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/english-source.approved.json`（SHA-256 `b51086be…`），批准收据 `timeline-approval-receipt.json`（SHA-256 `c00ec9e1…`）。批准语义是「时间轴」通过；英文文本和窗口继承父包原批准。
+
+## 默认规则（2026-11-27 起）
+
+逐句优先生产路线的默认时间轴是 **WhisperX 强制对齐的批准包**，不是父包的 `whisper-1` 时间轴：
+
+- `sfa.py start` 传父 `--english-package` 时，自动寻找同一期目录下的 `layer1-whisperx/english-source.approved.json`（默认 sibling；也兼容 `<layer1>/layer1-whisperx/`）；找到就用它填 anchor/media/window/英文包。
+- 没有批准包时 **fail closed**，提示先生成/听审/批准；不会静默退回父时间轴。
+- 显式 `--timeline-package <approved>` 仍然优先，用于页面/窗口与父包不同目录的情况。
+- `--allow-parent-timeline` 是明确的回滚/旧路径：继续用父 `whisper-1` 时间轴；不要用它绕过缺失的批准。
+- 候选包和未批准包都会被拒绝；2026-11-08 的批准只覆盖该期，其他期次逐期批准。
 
 ## 现在能做什么
 
@@ -18,13 +28,20 @@
 听审通过后，`--approve` 写 `english-source.approved.json`。只有这个批准包可以进入每周开工。2026-11-08 已经批准：
 
 ```bash
+# 默认：只给父 english-source.json；同一期目录 layer1-whisperx/english-source.approved.json 自动选中
+python3 experiments/sentence-first-agent/sfa.py start \
+  --run <run> --locale zh-Hans \
+  --english-package <layer1>/english-source.json \
+  --units 0:459 --title "<title>" --sync --publish
+
+# 显式指定批准包（目录不同或审核包单独放置时）
 python3 experiments/sentence-first-agent/sfa.py start \
   --run <run> --locale zh-Hans \
   --timeline-package <layer1-whisperx>/english-source.approved.json \
   --units 0:459 --title "<title>" --sync --publish
 ```
 
-`--timeline-package` 会校验批准包并自动填 `--anchor`、`--media`、`--window-start` 和 `--english-package`；候选包会被拒绝（`--timeline-package is not translation-eligible`）。它还会把 `--margin-before/--margin-after` **夹到批准窗口内**，避免首单元不在 0 或末单元离媒体结尾不足时 `prepare_clip` 越界。
+自动选中的批准包（或显式 `--timeline-package`）会校验并自动填 `--anchor`、`--media`、`--window-start` 和 `--english-package`；候选包会被拒绝（`not translation-eligible`）。它还会把 `--margin-before/--margin-after` **夹到批准窗口内**，避免首单元不在 0 或末单元离媒体结尾不足时 `prepare_clip` 越界。
 
 ## 2026-11-08 真实候选
 
@@ -77,7 +94,7 @@ python3 experiments/sentence-first-agent/sfa.py start \
 ```bash
 PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
   --english-source <layer1>/english-source.json \
-  --out <layer1>/layer1-whisperx \
+  --out <layer1-whisperx> \
   --runtime-python "$WHISPERX_PYTHON"
 ```
 
@@ -87,8 +104,8 @@ PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisper
 
 ```bash
 PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
-  --out <layer1>/layer1-whisperx --check
-open <layer1>/layer1-whisperx/timeline-review.html
+  --out <layer1-whisperx> --check
+open <layer1-whisperx>/timeline-review.html
 ```
 
 听审页按「父时间轴 vs WhisperX」位移最大的 20 个单元切原声片段。重点听：专名、数字、否定、掌声/长停顿边界、窗口首尾。CSV 给出全部 460 个单元。
@@ -99,28 +116,30 @@ open <layer1>/layer1-whisperx/timeline-review.html
 
 ```bash
 PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
-  --out <layer1>/layer1-whisperx \
+  --out <layer1-whisperx> \
   --approve "<reviewer>" --approved-at "<ISO-8601 with timezone>" \
-  --review-file <layer1>/layer1-whisperx/timeline-review.csv
+  --review-file <layer1-whisperx>/timeline-review.csv
 ```
 
 它写 `english-source.approved.json` 和 `timeline-approval-receipt.json`，不改写候选包。批准语义是**timing-only revision**：英文文本和批准窗口继承父包；`wordAlignment` 是新的人工结论；`sourceIdentity`/`transcriptCompleteness`/`sentenceAndPauseBoundaries` 继承父包批准并在收据里注明。批准收据的 `reviewFileSha256` 绑定听审 CSV；事后改写 CSV 会使收据失效。
 
-### 4. 开工
+### 4. 开工（默认自动选批准包）
 
 ```bash
 python3 experiments/sentence-first-agent/sfa.py start \
   --run <run> --locale zh-Hans \
-  --timeline-package <layer1>/layer1-whisperx/english-source.approved.json \
+  --english-package <layer1>/english-source.json \
   --units <LO:HI> --title "<title>" --sync --publish
 ```
 
-`--units` 仍按批准的锚点单元范围给；`--anchor`、`--media`、`--window-start`、`--english-package` 由批准包填。若要显式覆盖会与包不一致而报错，这是有意的。
+传父 `--english-package` 时，`sfa.py start` 自动选同一期目录下的 `layer1-whisperx/english-source.approved.json`（默认 sibling；也兼容 `<layer1>/layer1-whisperx/`）；`--anchor`、`--media`、`--window-start`、`--english-package` 由批准包填。`--units` 仍按批准的锚点单元范围给。没有批准包会报错并给生成命令，不会静默用父时间轴。
+
+显式 `--timeline-package` 仍可用于不同目录；显式 `--anchor`/`--media`/`--window-start` 与包冲突会报错。回滚用 `--allow-parent-timeline`。
 
 ## 失效与回滚
 
 - **新 Layer 1 身份**：时间轴变化会使所有 locale 的下游失效；必须按新 run 重建 L2/L3，不能把新时间写回旧包。旧 run 的父包和旧媒体不受影响。
-- **回滚**：不传 `--timeline-package`，继续用父 `english-source.json` 和父 anchor；或删除 `layer1-whisperx/`（它在忽略目录，未进 Git）。生产默认值没有改变。
+- **回滚（单次 run）**：加 `--allow-parent-timeline`；若同时给父 `--english-package`，`sfa.py` 会从父包填 anchor/media/window。继续用父 `whisper-1` 时间轴；或删除 `layer1-whisperx/`（它在忽略目录，未进 Git）。回滚只影响本次 run，不改变默认。
 - **不要**把候选包（`translationEligible=false`）拿去翻译或发布；`sfa.py` 和发布 gate 会拒绝。
 - **不要**在没有听审的情况下运行 `--approve`；批准收据会绑定 `reviewFileSha256`，事后改写 CSV 会使收据失效。
 
@@ -136,11 +155,50 @@ python3 experiments/sentence-first-agent/sfa.py start \
 | 语义 | timing-only revision；文本/窗口继承父批准；`wordAlignment` 是新的人工结论 |
 | 未改变 | 没有改父包、没有发布、没有改默认值、没有跑 L2/L3 |
 
+## 2026-11-28 首次真实生产测试清单
+
+明天用新一期真实素材按下面顺序跑；任何一步失败先停下修，不带失败进下一步。
+
+1. **父 Layer 1 英文包**：按原周更流程完成英文文本、窗口和人工批准，得到 `<layer1>/english-source.json`；确认 `translationEligible=true`、`review.humanApproval=true`。
+2. **生成 WhisperX 候选**：
+   ```bash
+   WHISPERX_PYTHON=<isolated-python-3.11-with-whisperx-3.8.6> \
+   PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
+     --english-source <layer1>/english-source.json --out <layer1-whisperx>
+   ```
+   看输出：`units`/`words` 与父包一致、`chunk_exact` 全成功、0 结构问题。非 0 退出或分块回退即停。
+3. **结构与听审**：
+   ```bash
+   PYTHONPATH=packages/production/src python3 -m tongxing_production.source.whisperx_timeline \
+     --out <layer1-whisperx> --check
+   open <layer1-whisperx>/timeline-review.html
+   ```
+   用户听审后批准；批准命令写入 `english-source.approved.json` 和收据。未经听审不批准。
+4. **开工 plan**：
+   ```bash
+   python3 experiments/sentence-first-agent/sfa.py start \
+     --run <run> --locale zh-Hans --english-package <layer1>/english-source.json \
+     --units <LO:HI> --title "<title>" --sync --publish --plan
+   ```
+   计划里应有 `timelineSource: default_sibling` 和 `timelinePackage` 指向批准包；`windowStart` 来自批准窗口。plan 通过才正式 start。
+5. **正式 start**：去掉 `--plan`。检查 `setup.json` 的 `inputs.timelinePackage`、`timelineSource`、`timelineMargins`，以及 `sentences`/`clipSeconds` 与批准包一致。preflight 必须 pass。
+6. **L2/L3**：按周更继续翻译、复核、TTS；所有 locale 都以新 anchor 为准，旧 run 不复用。
+7. **发布前**：`sfa_publish.py` 仍要求英文包 `status=ready_for_translation`、`translationEligible=true`、`review.humanApproval=true`、四项 checks approved；发布 gate 和 smoke 按原流程。
+8. **回滚**：如果时间轴有问题，停在下游之前，用父包重开：
+   ```bash
+   python3 experiments/sentence-first-agent/sfa.py start \
+     --run <run> --locale zh-Hans --english-package <layer1>/english-source.json \
+     --allow-parent-timeline --units <LO:HI> --title "<title>" --sync --publish
+   ```
+   给了父 `--english-package` 时会从父包填 anchor/media/window；也可显式给 `--anchor`/`--media`/`--window-start`。不要手改批准收据或听审 CSV。
+
+测试完成后把模型/适配器哈希、`chunk_exact` 结果、单元位移、`setup.json`、发布 gate 结果写进运行报告，并更新本页状态。
+
 ## 还剩什么
 
-1. **第一次真实周更**：用批准包执行 `sfa.py start --timeline-package ...`，再走翻译、TTS、发布 gate。验证发布包里英文对照、字幕和音频都绑定新 anchor。
-2. **连续两期人工听审通过后**，再把 WhisperX 时间轴写进默认开工命令（例如让 `sfa.py start` 在给定父包时自动生成候选并要求批准）；在完成第 1 步前不宣称默认切换。
-3. 第一期真实周更后，把新 anchor 的英文对照/字幕时间抽查结果写进复盘；若发现边界问题，回滚到父包。
+1. **2026-11-28 首次真实生产测试**：按上面清单跑一期；这是默认切换后的第一次真实运行。
+2. 测试通过后保持默认；若失败，按回滚步骤回父时间轴，并记录失败阶段与原因。
+3. 连续两期人工听审和真实周更通过后，才把默认写进更广的生产文档/其他形态；当前默认范围是逐句优先生产路线。
 
 ## 相关
 
