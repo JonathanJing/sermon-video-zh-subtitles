@@ -66,6 +66,7 @@ python3 experiments/sentence-first-agent/sfa.py start \
 | 批准包接受 | 真实批准后 `sfa.py start --plan --timeline-package <approved>` | plan 生成，`anchor/media/window/english-package` 自动填好；margin 夹到批准窗口 |
 | 批准包字段 | `--check` 与候选包对比 | `translationEligible=true`、`review.humanApproval=true`、四项 `checks=approved`、`review.evidence` 绑定批准收据 |
 | Setup preflight | `preflight.py --stage setup --english-package <approved>` | pass；460/460 单元、humanApproval、translationEligible 均通过 |
+| 批准包开工 setup | `sfa.py start --timeline-package <approved> --no-sync --no-publish` | pass；460 句/460 切片；clip 2,147.055 秒；margin 自动夹为 0.526/3.094667 |
 | 开工 plan | `sfa.py start --plan --timeline-package <approved>` | pass；自动填 anchor/media/window/english-package |
 | 发布合同字段 | 逐项核对 `sfa_publish._build_clip_reference` 的绑定 | pass；anchor/transcript/receipt/unit IDs 全部一致 |
 

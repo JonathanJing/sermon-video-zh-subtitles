@@ -84,7 +84,9 @@
 | `english-source.approved.json` | 102 KB | `b51086be4e4cb5a56ccbe1342f5b6eb4099cbbdbf4c8f4df3449bdcc515ca879` |
 | `timeline-approval-receipt.json` | 2.2 KB | `c00ec9e15c00817a78f647077ed74c0befc0ca8608840ddfaacfd4304e9dfed4` |
 
-验证副本 `artifacts/sentence-first-agent/whisperx-timeline-proof-20261108/`（不代表正式 run）：
+`sfa.py start` 真实 setup 验证（批准包、无翻译/TTS）在 `artifacts/sentence-first-agent/whisperx-timeline-approved-setup-proof/`：`setup.json`（`1c040da7…`）、`decisions.json`（`0a3d0b4b…`）、460 句、460 个切片、setup preflight pass。
+
+早期 `prepare_clip` 验证副本 `artifacts/sentence-first-agent/whisperx-timeline-proof-20261108/`（不代表正式 run）：
 
 | 产物 | 值 |
 |---|---|
@@ -118,6 +120,7 @@
 - **Layer 1 时间轴**：执行（父包校验、媒体哈希、抽音频、分块、WhisperX 对齐、结构门、候选包、听审页、批准路径测试）。
 - **Layer 1 文本**：`not_run`（工具不改文本；父包文本已人工批准）。
 - **人工时间轴听审/批准**：执行；2026-11-27 21:59 PST 用户批准 timing-only revision。
+- **`sfa.py start` setup**：执行；批准包、460 句/切片、setup preflight pass；未进入翻译/TTS。
 - **L2/L3/L4**：`not_run`；没有翻译、TTS、发布。
 - **真实周更**：`not_run`；批准包已就绪，等待第一次真实周更。
 
