@@ -11,7 +11,7 @@
 逐句优先生产路线的默认时间轴是 **WhisperX 强制对齐的批准包**，不是父包的 `whisper-1` 时间轴：
 
 - `sfa.py start` 传父 `--english-package` 时，自动寻找同一期目录下的 `layer1-whisperx/english-source.approved.json`（默认 sibling；也兼容 `<layer1>/layer1-whisperx/`）；找到就用它填 anchor/media/window/英文包。
-- 没有批准包时 **fail closed**，提示先生成/听审/批准；不会静默退回父时间轴。
+- 没有批准包时 **fail closed**，提示先生成/听审/批准；不会静默退回父时间轴。自动选中前会核对批准包的 `evidence` 是否绑定当前父包 SHA-256，不同期或旧包会被拒绝。
 - 显式 `--timeline-package <approved>` 仍然优先，用于页面/窗口与父包不同目录的情况。
 - `--allow-parent-timeline` 是明确的回滚/旧路径：继续用父 `whisper-1` 时间轴；不要用它绕过缺失的批准。
 - 候选包和未批准包都会被拒绝；2026-11-08 的批准只覆盖该期，其他期次逐期批准。

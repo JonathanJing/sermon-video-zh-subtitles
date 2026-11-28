@@ -99,7 +99,7 @@ python3 experiments/sentence-first-agent/sfa.py start --run <run> --locale zh-Ha
 规则：
 
 - 默认路径：`sfa.py start --english-package <parent>` 自动选同一期目录的 `layer1-whisperx/english-source.approved.json`（也兼容 `<parent>/layer1-whisperx/`）；plan 里 `timelineSource=default_sibling`。
-- 没有批准包时 fail closed；`--allow-parent-timeline` 才回父 `whisper-1` 时间轴，不要用它绕过批准。
+- 没有批准包时 fail closed；自动选中前核对批准包 `evidence` 是否绑定当前父包 SHA-256。`--allow-parent-timeline` 才回父 `whisper-1` 时间轴，不要用它绕过批准。
 - 候选包固定 `translationEligible=false`、`review.humanApproval=false`；`sfa.py start --timeline-package` 会拒绝并报 `not translation-eligible`。
 - 批准包四项 `checks=approved`：`sourceIdentity`／`transcriptCompleteness`／`sentenceAndPauseBoundaries` 继承父包批准，`wordAlignment` 是听审后的新人工结论；收据的 `reviewFileSha256` 绑定 `timeline-review.csv`，事后改写 CSV 会使收据失效。
 - `--timeline-package` 自动填 `--anchor`、`--media`、`--window-start`、`--english-package`，并把 `--margin-before/--margin-after` 夹到批准窗口内；不要再手填与包冲突的 anchor/window。

@@ -229,7 +229,8 @@ class TimelineTests(unittest.TestCase):
         package.write_text(json.dumps({"transcript": {"model": "openai"}}), encoding="utf-8")
         approved = self.root / "layer1-whisperx" / "english-source.approved.json"
         approved.parent.mkdir()
-        approved.write_text("{}", encoding="utf-8")
+        approved.write_text(json.dumps({"evidence": [
+            {"sha256": hashlib.sha256(package.read_bytes()).hexdigest()}]}), encoding="utf-8")
 
         class Args:
             timeline_package = None
@@ -245,6 +246,14 @@ class TimelineTests(unittest.TestCase):
             self.assertEqual(args.timeline_package, approved)
             self.assertEqual(args.timeline_source, "default_sibling")
             apply.assert_called_once_with(args)
+
+        wrong = Args()
+        wrong.approved = approved
+        wrong.timeline_package = approved
+        wrong.english_package = self.root / "wrong-parent.json"
+        wrong.english_package.write_text("{}", encoding="utf-8")
+        with self.assertRaises(sfa.SetupError):
+            sfa.resolve_timeline_package(wrong)
 
         missing = Args()
         missing.english_package = self.root / "other" / "english-source.json"

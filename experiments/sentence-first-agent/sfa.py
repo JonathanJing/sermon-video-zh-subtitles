@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import hashlib
 import json
 import os
 import shutil
@@ -542,6 +543,17 @@ def apply_timeline_package(a) -> None:
     a.timeline_margins = {"before": a.margin_before, "after": a.margin_after}
 
 
+def _verify_parent_binding(timeline_package: Path, parent_package: Path) -> None:
+    try:
+        package = json.loads(timeline_package.read_text(encoding="utf-8"))
+        parent_sha = hashlib.sha256(parent_package.read_bytes()).hexdigest()
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SetupError("args", f"cannot verify timeline parent binding: {exc}") from exc
+    if not any(isinstance(ref, dict) and ref.get("sha256") == parent_sha
+               for ref in (package.get("evidence") or [])):
+        raise SetupError("args", "timeline package does not bind the supplied parent English package")
+
+
 def resolve_timeline_package(a) -> None:
     """Resolve the default timeline before any run work starts.
 
@@ -552,6 +564,8 @@ def resolve_timeline_package(a) -> None:
     if a.timeline_package and a.allow_parent_timeline:
         raise SetupError("args", "--timeline-package and --allow-parent-timeline are mutually exclusive")
     if a.timeline_package:
+        if a.english_package and a.english_package != a.timeline_package:
+            _verify_parent_binding(a.timeline_package, a.english_package)
         apply_timeline_package(a)
         a.timeline_source = "explicit"
         return
@@ -584,6 +598,7 @@ def resolve_timeline_package(a) -> None:
         raise SetupError("args", "WhisperX timeline is the default; approved package not found at "
                                  + " or ".join(str(path) for path in candidates)
                                  + ". Run the timeline producer and --approve it, or pass --allow-parent-timeline.")
+    _verify_parent_binding(candidate, a.english_package)
     a.timeline_package = candidate
     apply_timeline_package(a)
     a.timeline_source = "default_sibling"

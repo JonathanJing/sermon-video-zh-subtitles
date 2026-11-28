@@ -26,7 +26,7 @@
 |---|---|
 | 核心 producer | `packages/production/src/tongxing_production/source/whisperx_timeline.py`，SHA-256 `85fec2d2…` |
 | runtime adapter | `tools/ops/whisperx_align_runtime.py`，SHA-256 `7b6028b7…` |
-| 开工集成 | `experiments/sentence-first-agent/sfa.py`，SHA-256 `0c126605…` |
+| 开工集成 | `experiments/sentence-first-agent/sfa.py`，SHA-256 `14862209…` |
 | 测试 | `tests/test_whisperx_timeline.py`，9 项通过 |
 | runtime | WhisperX 3.8.6 / torch 2.8.0 / torchaudio 2.8.0 / faster-whisper 1.2.1 / CTranslate2 4.9.1 |
 | 对齐模型 | `WAV2VEC2_ASR_BASE_960H` |
