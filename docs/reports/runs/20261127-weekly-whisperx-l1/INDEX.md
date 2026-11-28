@@ -3,7 +3,7 @@
 ## 结论先行
 
 - **交付类型**：自动生产流程代码与测试，不是页面/音频/发布。
-- **状态**：`production_deployed_pending_20261128_saturday_run`。`weekly_auto` 的 `l1.whisperx` 阶段、真实脚本运行、65 项测试、生产 worktree 部署和部署后 smoke 已完成；完整 Drive→英文表演练和真实周六运行未做。
+- **状态**：`production_deployed_pending_20261128_saturday_run`。`weekly_auto` 的 `l1.whisperx` 阶段、真实脚本运行、66 项测试、生产 worktree 部署和部署后 smoke 已完成；完整 Drive→英文表演练和真实周六运行未做。
 - **证据边界**：测试覆盖驱动/gate/tracks/publish 的合成流程；真实 2026-11-08 只验证了 `l1_whisperx.py → l1_anchor build`，没有重新下载、付费转写或打开审核页。
 
 ## 改动
@@ -16,7 +16,7 @@
 | `tools/ops/weekly_auto.py` | 新增 `l1.whisperx` 阶段，排在 `l1.transcribe` 与 `l1.anchor` 之间；英文表批准后包直接进 `sfa.py` |
 | `config/weekly-sermon-auto.json` | `transcription.timelineBackend` 默认 `whisperx`；可设 `whisper-1` 回滚 |
 | `tools/ops/whisperx_align_runtime.py` | 移除逐 chunk 的硬性 word 数等于 token 数检查；token 序列仍严格校验 |
-| `tests/test_l1_whisperx.py`、weekly-auto 测试 | 新增脚本测试；65 项通过 |
+| `tests/test_l1_whisperx.py`、weekly-auto 测试 | 新增脚本测试；66 项通过 |
 
 阶段顺序：
 
@@ -54,7 +54,7 @@ l1.transcribe → l1.whisperx → l1.anchor → l1.rows → gate.english → wai
 uv run --with pytest --with jsonschema --python 3.13 python -m pytest \
   tests/test_weekly_auto.py tests/test_weekly_auto_tracks.py \
   tests/test_weekly_auto_publish.py tests/test_l1_whisperx.py -q
-# 65 passed
+# 66 passed
 ```
 
 覆盖：新阶段在 `l1.transcribe` 后执行、fake WhisperX 输出进入 `l1_anchor`、英文表批准包模型为 `whisperx`、tracks/publish 继续调用 `sfa.py`、rehearsal 走父时间轴回退、缺 runtime 时 fail closed（脚本级）。
@@ -71,7 +71,7 @@ uv run --with pytest --with jsonschema --python 3.13 python -m pytest \
 
 ## 覆盖范围
 
-- **代码/测试**：执行（65 项）。
+- **代码/测试**：执行（66 项）。
 - **真实 2026-11-08 脚本**：执行（`l1_whisperx` + `l1_anchor build`）。
 - **生产部署**：`not_run`。
 - **完整 Drive→英文表 rehearsal**：`not_run`。
