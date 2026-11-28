@@ -35,6 +35,7 @@
   "transcription": {
     "environment": "prod",
     "timingModel": "whisper-1",
+    "timelineBackend": "whisperx",
     "textModel": "gpt-4o-transcribe",
     "chunkSeconds": 240,
     "textMaxAttempts": 3,

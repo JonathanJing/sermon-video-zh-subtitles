@@ -92,6 +92,16 @@ class Run:
                 return done(self.transcribe_exit, err="APIConnectionError: timed out")
             write_transcript(Path(command[command.index("--out") + 1]))
             return done()
+        if any("l1_whisperx.py" in part for part in command):
+            self.calls.append("whisperx")
+            raw = json.loads(Path(command[command.index("--raw-whisper") + 1]).read_text())
+            out = Path(command[command.index("--out") + 1])
+            words_path = Path(command[command.index("--words-out") + 1])
+            aligned = [{**word, "word": word["word"]} for word in raw["words"]]
+            out.write_text(json.dumps({**raw, "words": aligned, "timingQuality": "test-whisperx"}), encoding="utf-8")
+            words_path.write_text(json.dumps([{"text": word["word"], "start": word["start"], "end": word["end"]}
+                                               for word in aligned]), encoding="utf-8")
+            return done()
         self.calls.append(Path(command[1]).name + ":" + command[2] if command[2] in ("build", "revise") else Path(command[1]).name)
         kwargs.pop("env", None)
         return subprocess.run(command, **kwargs)
@@ -105,7 +115,9 @@ def driver(tmp_path):
     path = tmp_path / "config.json"
     path.write_text(json.dumps(config))
     (tmp_path / "artifacts" / "model-routing" / "macbook-tts" / "checkpoint-75d28").mkdir(parents=True)
-    return weekly_auto.Driver(tmp_path, config_path=path, local={"reviewBaseUrl": BASE}, run=Run(), opener=Opener(),
+    return weekly_auto.Driver(tmp_path, config_path=path,
+                              local={"reviewBaseUrl": BASE, "whisperxPython": sys.executable},
+                              run=Run(), opener=Opener(),
                               notifier=Notifier(), python=sys.executable, sleep=lambda seconds: None,
                               today=lambda: dt.date(2026, 11, 25))
 
@@ -141,7 +153,7 @@ def test_a_new_file_runs_by_itself_up_to_the_two_review_steps(driver, tmp_path):
     record = start(driver)
     assert record["production"] == "20261121-sermon" and record["state"] == "running"
     assert {name: s["state"] for name, s in record["stages"].items()} == {
-        **{name: "done" for name in weekly_auto.STAGES[:9]}, "wait.review": "waiting"}
+        **{name: "done" for name in weekly_auto.STAGES[:10]}, "wait.review": "waiting"}
     run = tmp_path / "artifacts" / "sentence-first-agent" / "20261121-sermon-source"
     identity = json.loads((run / "source" / "source.json").read_text())
     assert identity["sizeBytes"] == len(MEDIA) and identity["sha256"] == weekly_auto.sha256_file(run / "source" / "episode.mp4")
@@ -198,9 +210,11 @@ def test_page_decisions_produce_the_kickoff_record_and_an_approved_english_packa
     layer1 = tmp_path / "artifacts/sentence-first-agent" / f"{name}-source" / "layer1"
     package = json.loads((layer1 / "english-source.json").read_text())
     assert (package["status"], package["translationEligible"], package["review"]["humanApproval"]) == ("ready_for_translation", True, True)
+    assert package["transcript"]["model"] == "whisperx"
     assert [u["english"] for u in package["units"]] == [*SENTENCES[:2], "The writer says the city had twelve gates.", *SENTENCES[3:6]]
     assert package["review"]["reviewer"] == "Me (tailscale, review page)"
     candidate = json.loads((layer1 / "candidate" / "anchor-manifest.json").read_text())
+    assert candidate["policy"]["timingBasis"].startswith("WhisperX")
     assert package["review"]["decision"]["candidateAnchorManifestJsonSha256"] == weekly_auto.json_sha(candidate)
     assert package["anchors"]["artifact"]["jsonSha256"] != weekly_auto.json_sha(candidate), "the receipt binds the revised table"
     last = driver.store.last_decision(name, "l1.english-review")

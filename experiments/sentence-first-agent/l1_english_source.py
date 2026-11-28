@@ -65,6 +65,10 @@ def build(args) -> dict:
     if missing:
         raise SystemExit(f"the decision does not confirm: {', '.join(missing)}")
     human = not args.rehearsal
+    timing_note = args.timing_note or (
+        "WhisperX wav2vec2 强制对齐提供词级时间，gpt-4o-transcribe 提供文本；不是 MFA 音素对齐。"
+        if "whisperx" in args.timing_model.lower()
+        else "whisper-1 提供词级时间，gpt-4o-transcribe 提供文本；不是 MFA 音素对齐。")
     who = f"{reviewer.get('name') or reviewer['login']} ({reviewer['source']}, review page)"
     if args.rehearsal:
         who = f"rehearsal, not a human review ({who})"
@@ -113,8 +117,7 @@ def build(args) -> dict:
                         f"删除 {edit_counts[2]} 句；听过原声 {heard} 句）。"
                         + (f"审核者没有逐句审完：听过或改过 {looked} 句，其余 {max(0, candidate_units - looked)} 句按默认批准"
                            "（用户 2026-11-25 决定：批准不要求全部审完，剩下的默认批准）。" if by_default else "")
-                        + "被批准的是应用这些修改之后的句表。转写为 OpenAI whisper-1 词级时间与段文本，"
-                        "gpt-4o-transcribe 第二遍作独立交叉核对；单讲员，未跑说话人区分；不是 MFA 对齐。"
+                        + "被批准的是应用这些修改之后的句表。" + timing_note + " 单讲员，未跑说话人区分。"
                         + (f" 审核者备注：{decision['note']}" if decision.get("note") else "")
                         + (" 这是演练，不是人工审核，不能用于翻译或发布。" if args.rehearsal else ""))}
     receipt_path = out_dir / "english-approval-receipt.json"
@@ -131,10 +134,10 @@ def build(args) -> dict:
         "transcript": {"model": args.timing_model, "textModel": args.text_model, "artifact": evidence(aligned),
                        "upload": rel(args.upload), "uploadSha256": sha(args.upload),
                        "rawText": rel(args.raw_text), "rawTextSha256": sha(args.raw_text),
-                       "note": "whisper-1 提供词级时间，gpt-4o-transcribe 提供文本；不是 MFA 音素对齐。"},
+                       "note": timing_note},
         "anchors": {"artifact": evidence(args.anchor, anchors), "sourceUnitCount": len(units), "policy": anchors["policy"],
                     "input": {"mfaSegmentsSha256": sha(aligned),
-                              "note": "字段名沿用正式 schema；实际绑定的是 whisper-1 词级转写，不是 MFA 段文件。"}},
+                              "note": "字段名沿用正式 schema；实际绑定的是 " + args.timing_model + " 词级转写，不是 MFA 段文件。"}},
         "units": units,
         "review": {**receipt, "evidence": evidence(receipt_path, receipt)},
         "evidence": [evidence(args.anchor, anchors), evidence(aligned), evidence(window_path, window),
@@ -160,6 +163,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", type=Path, required=True, help="base for the relative evidence paths (the checkout root)")
     parser.add_argument("--out", type=Path, required=True, help="english-source.json; the receipts are written next to it")
     parser.add_argument("--timing-model", default="whisper-1")
+    parser.add_argument("--timing-note", help="policy text for how word-level timing was produced")
     parser.add_argument("--text-model", default="gpt-4o-transcribe")
     parser.add_argument("--rehearsal", action="store_true", help="write everything, approve nothing")
     return parser

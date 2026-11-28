@@ -291,12 +291,12 @@ def build(args) -> dict:
                         "speakerAttribution": "pending"},
         "policy": {
             "unitPolicy": "sermon_single_speaker_clause_v1",
-            "timingBasis": "OpenAI whisper-1 verbose_json word timestamps",
+            "timingBasis": args.timing_basis,
             "textSource": TEXT_SOURCE,
             "speakerSource": args.speaker_source,
             "splitRule": f"sentence close on .?! then max {args.max_seconds:g} s at the largest pause (>=0.25 s)",
         },
-        "input": {"source": "raw-whisper.json", "sourceUrl": args.source_url, "date": args.date,
+        "input": {"source": args.timing_source, "sourceUrl": args.source_url, "date": args.date,
                   "mediaSha256": sha, "mediaDurationSeconds": duration,
                   "whisperSegments": len(raw.get("segments", [])), "words": len(words)},
         "counts": {"sourceUnits": len(units), "sourceWords": len(words)},
@@ -380,6 +380,10 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--max-seconds", type=float, default=12.0)
     b.add_argument("--fixes", type=Path, help="machine fixes: global / text / merge / drop")
     b.add_argument("--text-chunks", type=Path, help="gpt-4o-chunks.json for the per-unit cross-check")
+    b.add_argument("--timing-basis", default="OpenAI whisper-1 verbose_json word timestamps",
+                   help="policy text for the word-timing source")
+    b.add_argument("--timing-source", default="raw-whisper.json",
+                   help="manifest input.source; use raw-whisperx.json for WhisperX timing")
     r = commands.add_parser("revise", help="apply the reviewer's edits to a candidate manifest")
     r.add_argument("--candidate", type=Path, required=True)
     r.add_argument("--edits", type=Path, required=True, help="JSON: replace / mergeWithPrevious / drop")

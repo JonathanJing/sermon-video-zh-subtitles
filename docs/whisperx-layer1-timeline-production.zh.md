@@ -6,6 +6,16 @@
 
 **2026-11-27 21:59 PST 已批准**：用户听审后批准 timing-only revision，批准包为 `artifacts/sentence-first-agent/20261108-sermon-source/layer1-whisperx/english-source.approved.json`（SHA-256 `b51086be…`），批准收据 `timeline-approval-receipt.json`（SHA-256 `c00ec9e1…`）。批准语义是「时间轴」通过；英文文本和窗口继承父包原批准。
 
+## 自动生产（weekly-auto）
+
+周六 18:00 的 Drive 自动流程现在已经包含 WhisperX：`tools/ops/weekly_auto.py` 在 `l1.transcribe` 之后增加 `l1.whisperx`，用 `experiments/sentence-first-agent/l1_whisperx.py` 对 timing-pass 的分段文本做强制对齐，写 `raw-whisperx.json` 和 `words.json`；`l1_anchor` 从 `raw-whisperx.json` 建句表。**英文表审核页看到的时间就是 WhisperX 时间，批准英文表即批准这份时间轴**，不需要再单独批一次。
+
+- 配置：`config/weekly-sermon-auto.json` 的 `transcription.timelineBackend` 默认 `whisperx`；设为 `whisper-1` 可回滚。
+- runtime：生产 worktree 的 `local.json` 必须写 `whisperxPython`（独立 Python 3.11 + WhisperX 3.8.6）；缺失时 `l1.whisperx` 失败并通知，不静默退回 whisper-1。
+- 产出：`raw-whisperx.json`、`words.json`、英文表候选、`layer1/english-source.json`（`transcript.model=whisperx`）；`setup.json` 的 `timelineSource` 应为 `default_sibling`/`explicit`，不是 `parent_explicit`。
+- 离线真实样本：2026-11-08 的 `raw-whisper.json` 经 `l1_whisperx.py` 得到 6,124 词，`l1_anchor build` 得到 462 句、0 个 >12 秒单元；这是脚本级验证，不是完整周六演练。
+- 完整部署、runtime 安装和演练步骤见[周六自动开工](weekly-auto-production.zh.md)。
+
 ## 默认规则（2026-11-27 起）
 
 逐句优先生产路线的默认时间轴是 **WhisperX 强制对齐的批准包**，不是父包的 `whisper-1` 时间轴：
