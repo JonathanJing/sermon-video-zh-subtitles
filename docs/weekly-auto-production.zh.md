@@ -71,7 +71,7 @@ uv pip install --python artifacts/whisperx-timeline-ab/runtime/bin/python whispe
 "whisperxPython": "/Users/<user>/.../artifacts/whisperx-timeline-ab/runtime/bin/python"
 ```
 
-新一期到英文表时，先确认 `raw-whisperx.json` 和 review 页时间都是 WhisperX；`setup.json` 的 `timelineSource` 应是 `default_sibling` 或 `explicit`，不是 `parent_explicit`。旧 production 的 `l1.anchor` 已经批准时，驱动会跳过 `l1.whisperx`，不会替换旧句表（2026-11-27 修复）。
+新一期到英文表时，先确认 `raw-whisperx.json` 和 review 页时间都是 WhisperX；`setup.json` 的 `timelineSource` 应是 `explicit_english_package`（weekly-auto 把批准包作为 `--english-package` 传入），不是 `parent_explicit`。旧 production 的 `l1.anchor` 已经批准时，驱动会跳过 `l1.whisperx`，不会替换旧句表（2026-11-27 修复）。
 
 ## 它守的规则
 

@@ -12,7 +12,7 @@
 
 - 配置：`config/weekly-sermon-auto.json` 的 `transcription.timelineBackend` 默认 `whisperx`；设为 `whisper-1` 可回滚。
 - runtime：生产 worktree 的 `local.json` 必须写 `whisperxPython`（独立 Python 3.11 + WhisperX 3.8.6）；缺失时 `l1.whisperx` 失败并通知，不静默退回 whisper-1。
-- 产出：`raw-whisperx.json`、`words.json`、英文表候选、`layer1/english-source.json`（`transcript.model=whisperx`）；`setup.json` 的 `timelineSource` 应为 `default_sibling`/`explicit`，不是 `parent_explicit`。
+- 产出：`raw-whisperx.json`、`words.json`、英文表候选、`layer1/english-source.json`（`transcript.model=whisperx`）；weekly-auto 把它作为 `--english-package` 传给 `sfa.py`，`setup.json` 的 `timelineSource` 应为 `explicit_english_package`，不是 `parent_explicit`。
 - 离线真实样本：2026-11-08 的 `raw-whisper.json` 经 `l1_whisperx.py` 得到 6,124 词，`l1_anchor build` 得到 462 句、0 个 >12 秒单元；这是脚本级验证，不是完整周六演练。
 - 完整部署、runtime 安装和演练步骤见[周六自动开工](weekly-auto-production.zh.md)。
 
